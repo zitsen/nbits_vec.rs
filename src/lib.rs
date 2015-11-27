@@ -1,0 +1,592 @@
+#![feature(custom_derive)]
+#![feature(concat_idents)]
+#![feature(op_assign_traits)]
+
+use std::ops::*;
+use std::mem;
+use std::cmp;
+use std::marker::PhantomData;
+use std::sync::Arc;
+
+macro_rules! _apply_bit_opts {
+    ($t: ident, $(($tr: ident, $func: ident)),*) => (
+        $(
+            impl $tr for $t {
+                fn $func(&mut self, rhs: $t) {
+                    self.storage.$func(rhs.storage)
+                }
+            }
+        )*
+    );
+    ($t: ident, $(($tr: ident, $func: ident, $out: ident)),*) => (
+        $(
+            impl $tr for $t {
+                type Output = $t;
+                fn $func(self, rhs: $t) -> $t {
+                    $t::new(self.storage.$func(rhs.storage))
+                }
+            }
+         )*
+    )
+}
+macro_rules! nbits_set {
+    ($(($t: ident, $size: expr, $mask: expr)),*) => (
+        $(
+            /// Struct for each NBits
+            #[derive(Copy, Clone, Eq, Debug, PartialEq, Hash, Default, Deref)]
+            pub struct $t(usize);
+            impl $t {
+                fn new(value: usize) -> Self {
+                    $t(value)
+                }
+            }
+            impl Nbits for $t {
+                #[inline]
+                fn bits() -> usize {
+                    $size
+                }
+                #[inline]
+                fn mask() -> Self {
+                    $t::new($mask)
+                }
+                #[inline]
+                fn zero() -> Self {
+                    $t::new(0)
+                }
+                #[inline]
+                fn val(&self) -> usize {
+                    self.0 & $mask
+                }
+            }
+            /*
+            _apply_bit_opts! {
+                $t,
+                (BitAnd, bitand, $t),
+                (BitXor, bitxor, $t),
+                (BitOr, bitor, $t)
+            }
+            _apply_bit_opts! {
+                $t,
+                (BitAndAssign, bitand_assign),
+                (BitOrAssign, bitor_assign),
+                (BitXorAssign, bitxor_assign)
+            }
+            */
+        )*
+        #[test]
+        fn test_struct_as_nbits() {
+            $(
+                assert_eq!(mem::size_of::<$t>(), mem::size_of::<usize>());
+                assert_eq!($t::bits(), $size);
+                assert_eq!($t::zero().val(), 0);
+                assert_eq!($t::mask().val().count_ones(), $size);
+                assert_eq!($t::mask().val().trailing_zeros(), 0);
+                assert_eq!($t::mask().val().leading_zeros() as usize, mem::size_of::<usize>() * 8 - $size);
+             )*
+        }
+        #[derive(Copy, Clone, Eq, Debug, PartialEq, Hash)]
+        pub enum AsNbits {
+            $($t($t),)*
+        }
+
+        //pub use AsNbits::*;
+        /*
+        impl AsNbits {
+            pub fn new(value: usize, width: usize) -> Self {
+                match width {
+                    $($size => $t::new(value),)*
+                    _ => unreachable!(),
+                }
+            }
+            pub fn ones(width: usize) -> Self {
+                match width {
+                    $($size => AsNbits::$t($t::ones()), )*
+                    _ => unreachable!(),
+                }
+            }
+            pub fn bits(self) -> usize {
+                match self {
+                    $(AsNbits::$t(..) => $t::bits(),)*
+                }
+            }
+
+            pub fn zero(width: usize) -> Self {
+                match self {
+                    $(AsNbits::$t(..) => AsNbits::$t($t::zero()),)*
+                }
+            }
+
+            pub fn val(self) -> usize {
+                match self {
+                    $(AsNbits::$t(v) => v.val(),)*
+                }
+            }
+        }
+        impl Deref for AsNbits {
+            type Target = usize;
+            fn deref(&self) -> &usize {
+                match self {
+                    $(&AsNbits::$t(ref v) => &v.storage,)*
+                }
+            }
+        }*/
+     )
+}
+
+nbits_set! {
+    (As1bits, 1, 0b1usize),
+    (As2bits, 2, 0b11usize)
+}
+pub trait Nbits:
+    Default +
+    // BitAnd<Output=usize> +
+{
+    fn bits() -> usize;
+    fn mask() -> Self;
+    fn zero() -> Self;
+    fn val(&self) -> usize;
+}
+
+#[derive(Default)]
+pub struct NbitsVec<T: Nbits, Storage = usize> {
+    storage: Vec<Storage>,
+    len: usize,
+    _marker: std::marker::PhantomData<T>,
+}
+
+impl<T: Nbits> NbitsVec<T> {
+    /// Constructs a new, empty NbitsVec<T>
+    ///
+    /// The vector will not allocate until elements are pushed onto it.
+    ///
+    /// # Examples
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// # }
+    /// ```
+    #[inline]
+    pub fn new() -> Self {
+        Default::default()
+    }
+    /// Constructs a new, empty Vec<T> with the specified capacity.
+    ///
+    /// The vector will be able to hold exactly capacity elements without reallocating. If capacity
+    /// is 0, the vector will not allocate.
+    ///
+    /// It is important to note that this function does not specify the length of the returned
+    /// vector, but only the capacity.
+    ///
+    /// # Examples
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// assert!(vec.capacity() >= 10);
+    /// # }
+    /// ```
+    pub fn with_capacity(capacity: usize) -> Self {
+        let mut me = Self::new();
+        me.reserve_exact(capacity);
+        me
+    }
+
+    pub unsafe fn from_raw_parts(ptr: *mut T, length: usize, capacity: usize) -> Self {
+        unimplemented!();
+    }
+
+    /// Returns the number of elements the vector can hold without reallocating.
+    ///
+    /// # Examples
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::{NbitsVec, As1bits};
+    /// # fn main() {
+    /// let v: NbitsVec<As1bits> = NbitsVec::with_capacity(10);
+    /// assert!(v.capacity() >= 10);
+    /// assert_eq!(v.capacity(), std::mem::size_of::<usize>() * 8);
+    /// # }
+    /// ```
+    #[inline(always)]
+    pub fn capacity(&self) -> usize {
+        Self::storage_to_capacity(self.storage.len())
+    }
+
+    pub fn unsafe_capacity(&self) -> usize {
+        Self::storage_to_capacity(self.storage.capacity())
+    }
+
+    /// Reserves capacity for at least additional more elements to be inserted in the given NbitsVec<T>.
+    /// The collection may reserve more space to avoid frequent reallocations.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity overflows usize.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
+    /// assert!(v.capacity() == 0);
+    /// v.reserve(100);
+    /// assert!(v.capacity() >= 100);
+    /// # }
+    /// ```
+    pub fn reserve(&mut self, additional: usize) {
+        let required_cap = self.len().checked_add(additional).expect("capacity overflow");
+        let double_cap = self.capacity() * 2;
+        let new_cap = cmp::max(double_cap, required_cap);
+        let new_buf_len = Self::capacity_to_storage(new_cap);
+        self.storage.reserve_exact(new_buf_len);
+        unsafe { self.storage.set_len(new_buf_len) }
+    }
+
+    /// Reserves the minimum capacity for exactly additional more elements to be inserted in the
+    /// given `NbitsVec<T>`. Does nothing if the capacity is already sufficient.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity overflows usize.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// use bits_vec::*;
+    /// # fn main() {
+    /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
+    /// assert!(v.capacity() == 0);
+    /// v.reserve_exact(64);
+    /// assert_eq!(v.capacity(), 64);
+    /// v.reserve_exact(127);
+    /// assert!(v.capacity() >= 127);
+    /// v.reserve_exact(128);
+    /// assert_eq!(v.capacity(), 128);
+    /// # }
+    /// ```
+    pub fn reserve_exact(&mut self, additional: usize) {
+        let new_capacity = self.len().checked_add(additional).expect("capacity overflow");
+        let old_capacity = self.capacity();
+        let old_storage = self.storage.len();
+        if new_capacity > old_capacity {
+            let new_storage_len = Self::capacity_to_storage(new_capacity);
+            self.storage.reserve_exact(new_storage_len - old_storage);
+            unsafe { self.storage.set_len(new_storage_len) }
+        }
+    }
+    /// Shrinks the capacity of the vector as much as possible.
+    ///
+    /// It will drop down as close as possible to the length but the allocator may still inform the
+    /// vector that there is space for a few more elements.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// vec.shrink_to_fit();
+    /// assert_eq!(vec.capacity(), 0);
+    /// # }
+    /// ```
+    ///
+    /// # Unimplemented
+    pub fn shrink_to_fit(&mut self) {
+        let fit_len = Self::capacity_to_storage(self.len());
+        self.storage.truncate(fit_len);
+        self.storage.shrink_to_fit();
+    }
+
+    pub fn into_boxed_slice(self) -> Box<[T]> {
+        unimplemented!();
+    }
+
+    /// Shorten a vector to be `len` elements long, dropping excess elements.
+    ///
+    /// If `len` is greater than the vector's current length, this has no effect.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(2);
+    /// unsafe { vec.set_len(2) }
+    /// vec.truncate(3);
+    /// assert_eq!(vec.len(), 2);
+    /// vec.truncate(1);
+    /// assert_eq!(vec.len(), 1);
+    /// # }
+    /// ```
+    pub fn truncate(&mut self, len: usize) {
+        if self.len() > len {
+            self.storage.truncate(Self::capacity_to_storage(len));
+            self.len = len;
+        }
+    }
+    pub fn as_slice(&self) -> &[T] {
+        unimplemented!();
+    }
+    pub fn as_mut_slice(&mut self) -> &mut [T] {
+        unimplemented!();
+    }
+    /// Sets the length of a vector.
+    ///
+    /// This will explicitly set the size of the vector, without actually modifying its buffers or
+    /// reserving additional capacity as needed, so it is up to the caller to ensure that the vector
+    /// is actually the specified size.
+    ///
+    /// Recommend to use [resize()](#method.resize) when you actually want to `resize` the vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
+    /// unsafe {
+    ///     v.set_len(3);
+    /// }
+    /// assert_eq!(v.len(), 3);
+    /// assert_eq!(v.capacity(), 0); // as documented, the capacity will not change
+    /// unsafe {
+    ///     v.set_len(1)
+    /// }
+    /// assert_eq!(v.len(), 1);
+    /// # }
+    /// ```
+    pub unsafe fn set_len(&mut self, len: usize) {
+        self.len = len;
+    }
+    pub fn swap_remove(&mut self, index: usize) -> T {
+        unimplemented!();
+    }
+    pub fn insert(&mut self, index: usize, element: T) {
+        unimplemented!();
+    }
+    pub fn remove(&mut self, index: usize) {
+        unimplemented!();
+    }
+    pub fn retain<F>(&mut self, f: F)
+        where F: FnMut(&T) -> bool
+    {
+        unimplemented!();
+    }
+    pub fn push(&mut self, value: T) {
+        unimplemented!();
+    }
+    pub fn pop(&mut self) -> Option<T> {
+        unimplemented!();
+    }
+    pub fn append(&mut self, other: &mut NbitsVec<T>) {
+        unimplemented!();
+    }
+
+    // pub fn drain<R>(&mut self, range: R) -> Drain<T>
+    // where R: RangeArgument<usize> {
+    // unimplemented!();
+    // }
+    //
+    pub fn clear(&mut self) {
+        unsafe { self.set_len(0) }
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns the number of bits in current length.
+    ///
+    /// It is related to the element numbers - not the capacity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// assert_eq!(vec.bits(), 0);
+    /// # }
+    /// ```
+    #[inline]
+    pub fn bits(&self) -> usize {
+        self.len() * T::bits()
+    }
+
+    /// Returns whether or not the vector is empty.
+    ///
+    /// Alias to `len() == 0`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// assert!(vec.is_empty());
+    /// # }
+    /// ```
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn split_off(&mut self, at: usize) -> Self {
+        unimplemented!();
+    }
+    /// Resizes the Vec in-place so that len() is equal to new_len.
+    ///
+    /// If new_len is greater than len(), the Vec is extended by the difference, with each
+    /// additional slot filled with value. If new_len is less than len(), the Vec is simply
+    /// truncated.
+    ///
+    pub fn resize(&mut self, new_len: usize, value: T) {
+        if (self.len() < new_len) {
+            self.truncate(new_len)
+        } else {
+            unimplemented!();
+        }
+    }
+
+    /// Extend the vector by `n` additional clones of `value`.
+    fn extend_with_element<V: AsRef<T>>(&mut self, n: usize, value: V) {
+        self.reserve_exact(n);
+
+    }
+
+    /// Set `bit` at some bit index.
+    ///
+    /// # Unsafety
+    ///
+    /// Be aware of the function will not check the index. Users should ensure to do this manually.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// vec.reserve(10);
+    /// unsafe { vec.set_len(7) };
+    /// vec._set_bit(0, true);
+    /// # }
+    /// ```
+    fn set_bit(&mut self, at: usize, bit: bool) {
+        let bits = self.bits();
+        if (at >= bits) {
+            panic!("attempt to set bit out of bounds");
+        }
+        let element_bits = mem::size_of::<usize>() * 8;
+        let storage_index = at / element_bits;
+        //assert!(storage_index < self.storage.len());
+        let storage_offset = at % element_bits;
+        println!("Set bit at {} as {} in storage({}, {})", at, bit, storage_index, storage_offset);
+        let mask = (bit as usize) << storage_offset;
+        if (bit) {
+            self.storage.index_mut(storage_index).bitor_assign(mask);
+        } else {
+            self.storage.index_mut(storage_index).bitand_assign(mask);
+        }
+    }
+    fn set_two_bits(&mut self, at: usize, bit: usize) {
+        let bits = self.bits() / 2;
+        if (at >= bits) {
+            panic!("attempt to set two bits at {}, but only have {}", at, bits);
+        }
+        let element_bits = mem::size_of::<usize>() * 8 / 2;
+        let storage_index = at / element_bits;
+    }
+
+    pub fn _set_bit(&mut self, at: usize, bit: bool) {
+        self.set_bit(at, bit);
+    }
+    pub fn push_all(&mut self, other: &[T]) {
+        unimplemented!();
+    }
+    // And any lost functions from `dedup` to the end.
+
+    /// Returns the element of a slice at the given index, or None if the index is out of bounds.
+    pub fn get(&self, index: usize) -> T {
+        unimplemented!();
+    }
+
+    pub fn get_mut(&self, index: usize) {
+        unimplemented!();
+    }
+
+    pub fn set(&self, index: usize) {
+    }
+
+    /// Converts capacity to storage size
+    fn capacity_to_storage(capacity: usize) -> usize {
+        if capacity == 0 {
+            0
+        } else {
+            (capacity * T::bits() - 1) / (mem::size_of::<usize>() * 8) + 1
+        }
+    }
+
+    /// Converts the storage size to capacity.
+    fn storage_to_capacity(storage: usize) -> usize {
+        storage * mem::size_of::<usize>() * 8 / T::bits()
+    }
+}
+
+pub struct Value<T: Nbits, S = usize> {
+    refer: Arc<NbitsVec<T, S>>,
+    index: usize,
+}
+
+impl<T: Nbits> Value<T> {
+    fn to_nbits(&self) -> T {
+        unimplemented!();
+    }
+    fn val(&self) -> usize {
+        self.to_nbits().val()
+    }
+    fn set<V: AsRef<T>>(&mut self, val: V) {
+        unimplemented!();
+    }
+}
+
+pub struct Iter<T: Nbits, S = usize> {
+    parent: Arc<NbitsVec<T, S>>,
+    index: usize,
+}
+
+impl<T: Nbits> Iter<T> {
+    fn finished(&self) -> bool {
+        unsafe { (*self.parent).len() >= self.index }
+    }
+}
+
+impl<T: Nbits> Iterator for Iter<T> {
+    type Item = T;
+    #[inline]
+    fn next(&mut self) -> Option<T> {
+        self.index += 1;
+        if self.finished() {
+            None
+        } else {
+            Some(unsafe { (*self.parent).get(self.index) })
+        }
+    }
+}
+
+pub struct IterMut<T: Nbits, S = usize> {
+    parent: *mut NbitsVec<T, S>,
+    index: usize,
+}

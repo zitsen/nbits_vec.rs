@@ -1,0 +1,15 @@
+[package]
+name = "bits_vec"
+version = "0.1.0"
+authors = ["Huo Linhe <huolinhe@berrygenomics.com>"]
+
+[dependencies]
+lazy_static = "0.1.15"
+
+[dependencies.clippy]
+version = "0.0.24"
+optional = true
+
+[features]
+default = []
+dev = ["clippy"]
