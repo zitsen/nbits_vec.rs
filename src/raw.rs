@@ -1,14 +1,9 @@
-#![feature(custom_derive)]
-#![feature(concat_idents)]
-#![feature(op_assign_traits)]
-#![feature(alloc)]
-#![feature(zero_one)]
-
-extern crate alloc;
-pub mod raw;
+use alloc::raw_vec::RawVec;
 use std::ops::*;
+use std::num::{One, Zero};
 use std::mem;
 use std::cmp;
+use std::ptr;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -17,7 +12,7 @@ macro_rules! _apply_bit_opts {
         $(
             impl $tr for $t {
                 fn $func(&mut self, rhs: $t) {
-                    self.storage.$func(rhs.storage)
+                    self.buf.$func(rhs.storage)
                 }
             }
         )*
@@ -27,7 +22,7 @@ macro_rules! _apply_bit_opts {
             impl $tr for $t {
                 type Output = $t;
                 fn $func(self, rhs: $t) -> $t {
-                    $t::new(self.storage.$func(rhs.storage))
+                    $t::new(self.buf.$func(rhs.storage))
                 }
             }
          )*
@@ -151,14 +146,46 @@ pub trait Nbits:
     fn val(&self) -> usize;
 }
 
-#[derive(Default)]
-pub struct NbitsVec<T: Nbits, Storage = usize> {
-    storage: Vec<Storage>,
+pub struct NbitsVec<T:  Nbits,
+B:  Shl<usize, Output=B> +
+    Shr<usize, Output=B> +
+    One +
+    Zero +
+    Not<Output=B> +
+    BitOr<Output=B> +
+    BitAnd<Output=B> = usize
+> {
+    buf: RawVec<B>,
     len: usize,
-    _marker: std::marker::PhantomData<T>,
+    _marker: PhantomData<T>,
 }
 
-impl<T: Nbits> NbitsVec<T> {
+impl<
+T:  Nbits,
+B:  Default +
+    Shl<usize, Output=B> +
+    Shr<usize, Output=B> +
+    One +
+    Zero +
+    Not<Output=B> +
+    BitOr<Output=B> +
+    BitAnd<Output=B>
+> Default for NbitsVec<T, B> {
+    fn default() -> Self {
+        NbitsVec::new()
+    }
+}
+
+impl<
+T:  Nbits,
+B:  Shl<usize, Output=B> +
+    Shr<usize, Output=B> +
+    BitOr<Output=B> +
+    BitAnd<Output=B> +
+    One +
+    Zero +
+    Not<Output=B> +
+> NbitsVec<T, B> {
     /// Constructs a new, empty NbitsVec<T>
     ///
     /// The vector will not allocate until elements are pushed onto it.
@@ -166,14 +193,18 @@ impl<T: Nbits> NbitsVec<T> {
     /// # Examples
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
     /// # }
     /// ```
     #[inline]
     pub fn new() -> Self {
-        Default::default()
+        NbitsVec {
+            buf: RawVec::new(),
+            len: 0,
+            _marker: PhantomData
+        }
     }
     /// Constructs a new, empty Vec<T> with the specified capacity.
     ///
@@ -186,20 +217,26 @@ impl<T: Nbits> NbitsVec<T> {
     /// # Examples
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// assert!(vec.capacity() >= 10);
     /// # }
     /// ```
     pub fn with_capacity(capacity: usize) -> Self {
-        let mut me = Self::new();
-        me.reserve_exact(capacity);
-        me
+        NbitsVec {
+            buf: RawVec::with_capacity(Self::capacity_to_storage(capacity)),
+            len: 0,
+            _marker: PhantomData,
+        }
     }
 
-    pub unsafe fn from_raw_parts(ptr: *mut T, length: usize, capacity: usize) -> Self {
-        unimplemented!();
+    pub unsafe fn from_raw_parts(ptr: *mut B, length: usize, capacity: usize) -> Self {
+        NbitsVec {
+            buf: RawVec::from_raw_parts(ptr, Self::capacity_to_storage(capacity)),
+            len: length,
+            _marker: PhantomData
+        }
     }
 
     /// Returns the number of elements the vector can hold without reallocating.
@@ -216,11 +253,7 @@ impl<T: Nbits> NbitsVec<T> {
     /// ```
     #[inline(always)]
     pub fn capacity(&self) -> usize {
-        Self::storage_to_capacity(self.storage.len())
-    }
-
-    pub fn unsafe_capacity(&self) -> usize {
-        Self::storage_to_capacity(self.storage.capacity())
+        Self::storage_to_capacity(self.buf.cap())
     }
 
     /// Reserves capacity for at least additional more elements to be inserted in the given NbitsVec<T>.
@@ -234,7 +267,7 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
     /// assert!(v.capacity() == 0);
@@ -244,11 +277,9 @@ impl<T: Nbits> NbitsVec<T> {
     /// ```
     pub fn reserve(&mut self, additional: usize) {
         let required_cap = self.len().checked_add(additional).expect("capacity overflow");
-        let double_cap = self.capacity() * 2;
-        let new_cap = cmp::max(double_cap, required_cap);
-        let new_buf_len = Self::capacity_to_storage(new_cap);
-        self.storage.reserve_exact(new_buf_len);
-        unsafe { self.storage.set_len(new_buf_len) }
+        let used_cap = Self::capacity_to_storage(self.len());
+        let need_extra_cap = Self::capacity_to_storage(required_cap);
+        self.buf.reserve(used_cap, need_extra_cap);
     }
 
     /// Reserves the minimum capacity for exactly additional more elements to be inserted in the
@@ -262,7 +293,7 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// use bits_vec::*;
+    /// use bits_vec::raw::*;
     /// # fn main() {
     /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
     /// assert!(v.capacity() == 0);
@@ -275,14 +306,10 @@ impl<T: Nbits> NbitsVec<T> {
     /// # }
     /// ```
     pub fn reserve_exact(&mut self, additional: usize) {
-        let new_capacity = self.len().checked_add(additional).expect("capacity overflow");
-        let old_capacity = self.capacity();
-        let old_storage = self.storage.len();
-        if new_capacity > old_capacity {
-            let new_storage_len = Self::capacity_to_storage(new_capacity);
-            self.storage.reserve_exact(new_storage_len - old_storage);
-            unsafe { self.storage.set_len(new_storage_len) }
-        }
+        let required_cap = self.len().checked_add(additional).expect("capacity overflow");
+        let used_cap = Self::capacity_to_storage(self.len());
+        let need_extra_cap = Self::capacity_to_storage(required_cap);
+        self.buf.reserve_exact(used_cap, need_extra_cap);
     }
     /// Shrinks the capacity of the vector as much as possible.
     ///
@@ -293,7 +320,7 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// vec.shrink_to_fit();
@@ -304,8 +331,7 @@ impl<T: Nbits> NbitsVec<T> {
     /// # Unimplemented
     pub fn shrink_to_fit(&mut self) {
         let fit_len = Self::capacity_to_storage(self.len());
-        self.storage.truncate(fit_len);
-        self.storage.shrink_to_fit();
+        self.buf.shrink_to_fit(fit_len);
     }
 
     pub fn into_boxed_slice(self) -> Box<[T]> {
@@ -320,7 +346,7 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(2);
     /// unsafe { vec.set_len(2) }
@@ -332,8 +358,8 @@ impl<T: Nbits> NbitsVec<T> {
     /// ```
     pub fn truncate(&mut self, len: usize) {
         if self.len() > len {
-            self.storage.truncate(Self::capacity_to_storage(len));
             self.len = len;
+            self.shrink_to_fit();
         }
     }
     pub fn as_slice(&self) -> &[T] {
@@ -354,7 +380,7 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
     /// unsafe {
@@ -417,7 +443,7 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// assert_eq!(vec.bits(), 0);
@@ -436,7 +462,7 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// assert!(vec.is_empty());
@@ -457,7 +483,7 @@ impl<T: Nbits> NbitsVec<T> {
     /// truncated.
     ///
     pub fn resize(&mut self, new_len: usize, value: T) {
-        if (self.len() < new_len) {
+        if self.len() < new_len {
             self.truncate(new_len)
         } else {
             unimplemented!();
@@ -480,29 +506,32 @@ impl<T: Nbits> NbitsVec<T> {
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::*;
+    /// # use bits_vec::raw::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// vec.reserve(10);
     /// unsafe { vec.set_len(7) };
-    /// vec._set_bit(0, true);
+    /// vec.set_bit(0, true);
     /// # }
     /// ```
-    fn set_bit(&mut self, at: usize, bit: bool) {
+    ///
+    pub fn set_bit(&mut self, at: usize, bit: bool) {
         let bits = self.bits();
         if (at >= bits) {
             panic!("attempt to set bit out of bounds");
         }
-        let element_bits = mem::size_of::<usize>() * 8;
+        let element_bits = mem::size_of::<B>() * 8;
         let storage_index = at / element_bits;
-        //assert!(storage_index < self.storage.len());
-        let storage_offset = at % element_bits;
-        println!("Set bit at {} as {} in storage({}, {})", at, bit, storage_index, storage_offset);
-        let mask = (bit as usize) << storage_offset;
-        if (bit) {
-            self.storage.index_mut(storage_index).bitor_assign(mask);
-        } else {
-            self.storage.index_mut(storage_index).bitand_assign(mask);
+        //assert!(storage_index < self.buf.len());
+        let storage_offset = (at % element_bits);
+        let mask: B = B::one() << storage_offset;
+        unsafe {
+            let ptr = self.buf.ptr().offset(storage_index as isize);
+            if (bit) {
+                ptr::write(ptr, ptr::read(ptr) | mask);
+            } else {
+                ptr::write(ptr, ptr::read(ptr) & !mask);
+            }
         }
     }
     fn set_two_bits(&mut self, at: usize, bit: usize) {
@@ -514,9 +543,6 @@ impl<T: Nbits> NbitsVec<T> {
         let storage_index = at / element_bits;
     }
 
-    pub fn _set_bit(&mut self, at: usize, bit: bool) {
-        self.set_bit(at, bit);
-    }
     pub fn push_all(&mut self, other: &[T]) {
         unimplemented!();
     }
@@ -539,17 +565,20 @@ impl<T: Nbits> NbitsVec<T> {
         if capacity == 0 {
             0
         } else {
-            (capacity * T::bits() - 1) / (mem::size_of::<usize>() * 8) + 1
+            (capacity * T::bits() - 1) / (mem::size_of::<B>() * 8) + 1
         }
     }
 
     /// Converts the storage size to capacity.
     fn storage_to_capacity(storage: usize) -> usize {
-        storage * mem::size_of::<usize>() * 8 / T::bits()
+        storage * mem::size_of::<B>() * 8 / T::bits()
     }
 }
 
-pub struct Value<T: Nbits, S = usize> {
+impl<T: Nbits> NbitsVec<T> {
+}
+/*
+pub struct Value<T: Nbits, S: BitOr<Output=usize> = usize> {
     refer: Arc<NbitsVec<T, S>>,
     index: usize,
 }
@@ -594,3 +623,4 @@ pub struct IterMut<T: Nbits, S = usize> {
     parent: *mut NbitsVec<T, S>,
     index: usize,
 }
+*/
