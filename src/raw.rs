@@ -147,13 +147,14 @@ pub trait Nbits:
 }
 
 pub struct NbitsVec<T:  Nbits,
-B:  Shl<usize, Output=B> +
+B:  /*Shl<usize, Output=B> +
     Shr<usize, Output=B> +
+    Eq + PartialEq + Copy +
     One +
     Zero +
     Not<Output=B> +
     BitOr<Output=B> +
-    BitAnd<Output=B> = usize
+    BitAnd<Output=B>*/ = usize
 > {
     buf: RawVec<B>,
     len: usize,
@@ -165,6 +166,7 @@ T:  Nbits,
 B:  Default +
     Shl<usize, Output=B> +
     Shr<usize, Output=B> +
+    Eq + PartialEq + Copy +
     One +
     Zero +
     Not<Output=B> +
@@ -172,7 +174,11 @@ B:  Default +
     BitAnd<Output=B>
 > Default for NbitsVec<T, B> {
     fn default() -> Self {
-        NbitsVec::new()
+        NbitsVec {
+            buf: RawVec::new(),
+            len: 0,
+            _marker: PhantomData
+        }
     }
 }
 
@@ -182,6 +188,7 @@ B:  Shl<usize, Output=B> +
     Shr<usize, Output=B> +
     BitOr<Output=B> +
     BitAnd<Output=B> +
+    Eq + PartialEq + Copy +
     One +
     Zero +
     Not<Output=B> +
@@ -482,18 +489,17 @@ B:  Shl<usize, Output=B> +
     /// additional slot filled with value. If new_len is less than len(), the Vec is simply
     /// truncated.
     ///
-    pub fn resize(&mut self, new_len: usize, value: T) {
-        if self.len() < new_len {
-            self.truncate(new_len)
+    pub fn resize<V: AsRef<T>>(&mut self, new_len: usize, value: V) {
+        if self.len() > new_len {
+            self.extend_with_element(new_len, value);
         } else {
-            unimplemented!();
+            self.truncate(new_len);
         }
     }
 
     /// Extend the vector by `n` additional clones of `value`.
     fn extend_with_element<V: AsRef<T>>(&mut self, n: usize, value: V) {
         self.reserve_exact(n);
-
     }
 
     /// Set `bit` at some bit index.
@@ -534,6 +540,46 @@ B:  Shl<usize, Output=B> +
             }
         }
     }
+
+    /// Get `bit` at some bit index.
+    ///
+    /// Returns `None` if required index is out of bounds, else return `bool` for bit value.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::raw::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// vec.reserve(10);
+    /// assert!(vec.get_bit(0).is_none());
+    /// unsafe { vec.set_len(8) };
+    /// for i in 0..8 {
+    ///     vec.set_bit(i, true);
+    ///     assert_eq!(vec.get_bit(i), Some(true));
+    /// }
+    /// for i in 0..8 {
+    ///     vec.set_bit(i, false);
+    ///     assert_eq!(vec.get_bit(i), Some(false));
+    /// }
+    /// # }
+    /// ```
+    ///
+    pub fn get_bit(&self, at: usize) -> Option<bool> {
+        let bits = self.bits();
+        if at >= bits {
+            return None;
+        }
+        let element_bits = mem::size_of::<B>() * 8;
+        let storage_index = at / element_bits;
+        let storage_offset = at % element_bits;
+        let ptr = unsafe { self.buf.ptr().offset(storage_index as isize) };
+        let bit = unsafe { ptr::read(ptr) } >> storage_offset & B::one();
+        Some(bit != B::zero())
+    }
+
+
     fn set_two_bits(&mut self, at: usize, bit: usize) {
         let bits = self.bits() / 2;
         if (at >= bits) {
@@ -555,9 +601,6 @@ B:  Shl<usize, Output=B> +
 
     pub fn get_mut(&self, index: usize) {
         unimplemented!();
-    }
-
-    pub fn set(&self, index: usize) {
     }
 
     /// Converts capacity to storage size
