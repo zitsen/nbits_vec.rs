@@ -1,9 +1,11 @@
 use alloc::raw_vec::RawVec;
+use std::any::Any;
 use std::ops::*;
 use std::num::{One, Zero};
 use std::mem;
 use std::cmp;
 use std::ptr;
+use std::slice;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
@@ -32,14 +34,14 @@ macro_rules! nbits_set {
     ($(($t: ident, $size: expr, $mask: expr)),*) => (
         $(
             /// Struct for each NBits
-            #[derive(Copy, Clone, Eq, Debug, PartialEq, Hash, Default, Deref)]
-            pub struct $t(usize);
-            impl $t {
-                fn new(value: usize) -> Self {
+            #[derive(Copy, Clone, Eq, Debug, PartialEq, Hash, Deref)]
+            pub struct $t<'a>(&'a usize);
+            impl<'a> $t<'a> {
+                pub fn new(value: &'a usize) -> Self {
                     $t(value)
                 }
             }
-            impl Nbits for $t {
+            impl<'a> Nbits for $t<'a> {
                 #[inline]
                 fn bits() -> usize {
                     $size
@@ -50,13 +52,39 @@ macro_rules! nbits_set {
                 }
                 #[inline]
                 fn zero() -> Self {
-                    $t::new(0)
+                    $t::new(&ZERO_BIT)
                 }
                 #[inline]
                 fn val(&self) -> usize {
                     self.0 & $mask
                 }
             }
+
+            impl<'a> Deref for $t<'a> {
+                type Target = usize;
+                fn deref(&self) -> &usize {
+                    self.0
+                }
+            }
+
+            impl<'a> From<$t<'a>> for usize {
+                fn from(v: $t<'a>) -> usize {
+                    v.val()
+                }
+            }
+
+            impl<'a> From<&'a usize> for $t<'a> {
+                fn from(v: &'a usize) -> $t<'a> {
+                    $t::new(v)
+                }
+            }
+            /*
+            impl Into<$t> for usize {
+                fn into(self) -> $t {
+                    $t(self)
+                }
+            }
+            */
             /*
             _apply_bit_opts! {
                 $t,
@@ -83,10 +111,10 @@ macro_rules! nbits_set {
                 assert_eq!($t::mask().val().leading_zeros() as usize, mem::size_of::<usize>() * 8 - $size);
              )*
         }
-        #[derive(Copy, Clone, Eq, Debug, PartialEq, Hash)]
-        pub enum AsNbits {
-            $($t($t),)*
-        }
+        //#[derive(Copy, Clone, Eq, Debug, PartialEq, Hash)]
+        //pub enum AsNbits {
+        //    $($t($t),)*
+        //}
 
         //pub use AsNbits::*;
         /*
@@ -132,12 +160,15 @@ macro_rules! nbits_set {
      )
 }
 
+static ZERO_BIT: usize = 0;
+static ONE_BIT_MASK: usize = 0b1;
+static TWO_BIT_MASK: usize = 0b11;
 nbits_set! {
-    (As1bits, 1, 0b1usize),
-    (As2bits, 2, 0b11usize)
+    (As1bits, 1, &ONE_BIT_MASK),
+    (As2bits, 2, &TWO_BIT_MASK)
 }
 pub trait Nbits:
-    Default +
+    // Default +
     // BitAnd<Output=usize> +
 {
     fn bits() -> usize;
@@ -146,16 +177,7 @@ pub trait Nbits:
     fn val(&self) -> usize;
 }
 
-pub struct NbitsVec<T:  Nbits,
-B:  /*Shl<usize, Output=B> +
-    Shr<usize, Output=B> +
-    Eq + PartialEq + Copy +
-    One +
-    Zero +
-    Not<Output=B> +
-    BitOr<Output=B> +
-    BitAnd<Output=B>*/ = usize
-> {
+pub struct NbitsVec<T: Nbits, B = usize> {
     buf: RawVec<B>,
     len: usize,
     _marker: PhantomData<T>,
@@ -177,7 +199,7 @@ B:  Default +
         NbitsVec {
             buf: RawVec::new(),
             len: 0,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 }
@@ -210,7 +232,7 @@ B:  Shl<usize, Output=B> +
         NbitsVec {
             buf: RawVec::new(),
             len: 0,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
     /// Constructs a new, empty Vec<T> with the specified capacity.
@@ -242,7 +264,7 @@ B:  Shl<usize, Output=B> +
         NbitsVec {
             buf: RawVec::from_raw_parts(ptr, Self::capacity_to_storage(capacity)),
             len: length,
-            _marker: PhantomData
+            _marker: PhantomData,
         }
     }
 
@@ -523,17 +545,17 @@ B:  Shl<usize, Output=B> +
     ///
     pub fn set_bit(&mut self, at: usize, bit: bool) {
         let bits = self.bits();
-        if (at >= bits) {
+        if at >= bits {
             panic!("attempt to set bit out of bounds");
         }
         let element_bits = mem::size_of::<B>() * 8;
         let storage_index = at / element_bits;
-        //assert!(storage_index < self.buf.len());
-        let storage_offset = (at % element_bits);
+        // assert!(storage_index < self.buf.len());
+        let storage_offset = at % element_bits;
         let mask: B = B::one() << storage_offset;
         unsafe {
             let ptr = self.buf.ptr().offset(storage_index as isize);
-            if (bit) {
+            if bit {
                 ptr::write(ptr, ptr::read(ptr) | mask);
             } else {
                 ptr::write(ptr, ptr::read(ptr) & !mask);
@@ -580,9 +602,34 @@ B:  Shl<usize, Output=B> +
     }
 
 
+    pub fn set_bits(&mut self, at: usize, n: usize, bits: usize) {
+        let max_n = mem::size_of::<usize>();
+        if n > max_n {
+            panic!("required setting {} bits but max is {}", n, max_n);
+        }
+        let mut value = bits;
+        for idx in (at..).take(n) {
+            self.set_bit(idx, value & 1 == 1);
+            value.shr_assign(1);
+        }
+    }
+    pub fn get_bits(&self, at: usize, n: usize) -> usize {
+        let max_n = mem::size_of::<usize>();
+        if n > max_n {
+            panic!("required setting {} bits but max is {}", n, max_n);
+        }
+        (at..).take(n).fold(0, |v, x| {
+            if self.get_bit(x).unwrap() {
+                (v << 1) | 1
+            } else {
+                v << 1
+            }
+        })
+    }
+
     fn set_two_bits(&mut self, at: usize, bit: usize) {
         let bits = self.bits() / 2;
-        if (at >= bits) {
+        if at >= bits {
             panic!("attempt to set two bits at {}, but only have {}", at, bits);
         }
         let element_bits = mem::size_of::<usize>() * 8 / 2;
@@ -594,13 +641,51 @@ B:  Shl<usize, Output=B> +
     }
     // And any lost functions from `dedup` to the end.
 
-    /// Returns the element of a slice at the given index, or None if the index is out of bounds.
-    pub fn get(&self, index: usize) -> T {
+    pub fn get_mut(&self, index: usize) {
         unimplemented!();
     }
 
-    pub fn get_mut(&self, index: usize) {
-        unimplemented!();
+    /// Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::raw::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// unsafe { vec.set_len(2) }
+    /// vec.set(0, 0b11usize);
+    /// assert!(vec.get_bit(0).unwrap());
+    /// assert!(vec.get_bit(1).unwrap());
+    /// let a = 0;
+    /// let v = As2bits::new(&a);
+    /// vec.set(0, v.val());
+    /// assert_eq!(vec.get_bit(0), Some(false));
+    /// assert_eq!(vec.get_bit(1), Some(false));
+    /// # }
+    /// ```
+    pub fn set(&mut self, index: usize, value: usize) {
+        if index >= self.len {
+            panic!("attempt to set at {} but only {}", index, self.len);
+        }
+        self.set_bits(index * T::bits(), T::bits(), value.into());
+    }
+    /// Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::raw::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
+    /// unsafe { vec.set_len(2) }
+    /// vec.set(0, 0b11usize);
+    /// assert_eq!(vec.get(0), 0b11);
+    /// # }
+    /// ```
+    pub fn get(&self, index: usize) -> usize {
+        if index >= self.len {
+            panic!("attempt to get at {} but only {}", index, self.len);
+        }
+        self.get_bits(index * T::bits(), T::bits())
     }
 
     /// Converts capacity to storage size
@@ -618,52 +703,53 @@ B:  Shl<usize, Output=B> +
     }
 }
 
-impl<T: Nbits> NbitsVec<T> {
+#[cfg(test)]
+mod tests {
 }
-/*
-pub struct Value<T: Nbits, S: BitOr<Output=usize> = usize> {
-    refer: Arc<NbitsVec<T, S>>,
-    index: usize,
-}
-
-impl<T: Nbits> Value<T> {
-    fn to_nbits(&self) -> T {
-        unimplemented!();
-    }
-    fn val(&self) -> usize {
-        self.to_nbits().val()
-    }
-    fn set<V: AsRef<T>>(&mut self, val: V) {
-        unimplemented!();
-    }
-}
-
-pub struct Iter<T: Nbits, S = usize> {
-    parent: Arc<NbitsVec<T, S>>,
-    index: usize,
-}
-
-impl<T: Nbits> Iter<T> {
-    fn finished(&self) -> bool {
-        unsafe { (*self.parent).len() >= self.index }
-    }
-}
-
-impl<T: Nbits> Iterator for Iter<T> {
-    type Item = T;
-    #[inline]
-    fn next(&mut self) -> Option<T> {
-        self.index += 1;
-        if self.finished() {
-            None
-        } else {
-            Some(unsafe { (*self.parent).get(self.index) })
-        }
-    }
-}
-
-pub struct IterMut<T: Nbits, S = usize> {
-    parent: *mut NbitsVec<T, S>,
-    index: usize,
-}
-*/
+//
+// pub struct Value<T: Nbits, S: BitOr<Output=usize> = usize> {
+// refer: Arc<NbitsVec<T, S>>,
+// index: usize,
+// }
+//
+// impl<T: Nbits> Value<T> {
+// fn to_nbits(&self) -> T {
+// unimplemented!();
+// }
+// fn val(&self) -> usize {
+// self.to_nbits().val()
+// }
+// fn set<V: AsRef<T>>(&mut self, val: V) {
+// unimplemented!();
+// }
+// }
+//
+// pub struct Iter<T: Nbits, S = usize> {
+// parent: Arc<NbitsVec<T, S>>,
+// index: usize,
+// }
+//
+// impl<T: Nbits> Iter<T> {
+// fn finished(&self) -> bool {
+// unsafe { (*self.parent).len() >= self.index }
+// }
+// }
+//
+// impl<T: Nbits> Iterator for Iter<T> {
+// type Item = T;
+// #[inline]
+// fn next(&mut self) -> Option<T> {
+// self.index += 1;
+// if self.finished() {
+// None
+// } else {
+// Some(unsafe { (*self.parent).get(self.index) })
+// }
+// }
+// }
+//
+// pub struct IterMut<T: Nbits, S = usize> {
+// parent: *mut NbitsVec<T, S>,
+// index: usize,
+// }
+//

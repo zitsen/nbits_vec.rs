@@ -495,9 +495,13 @@ impl<T: Nbits> NbitsVec<T> {
         }
         let element_bits = mem::size_of::<usize>() * 8;
         let storage_index = at / element_bits;
-        //assert!(storage_index < self.storage.len());
+        // assert!(storage_index < self.storage.len());
         let storage_offset = at % element_bits;
-        println!("Set bit at {} as {} in storage({}, {})", at, bit, storage_index, storage_offset);
+        println!("Set bit at {} as {} in storage({}, {})",
+                 at,
+                 bit,
+                 storage_index,
+                 storage_offset);
         let mask = (bit as usize) << storage_offset;
         if (bit) {
             self.storage.index_mut(storage_index).bitor_assign(mask);
