@@ -18,5 +18,7 @@ macro_rules! nbits_set {
 
 nbits_set! {
     (As1bits, 1),
-    (As2bits, 2)
+    (As2bits, 2),
+    (As3bits, 3),
+    (As4bits, 4)
 }
