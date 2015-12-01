@@ -1,180 +1,12 @@
 use alloc::raw_vec::RawVec;
-use std::any::Any;
 use std::ops::*;
 use std::num::{One, Zero};
 use std::mem;
-use std::cmp;
 use std::ptr;
-use std::slice;
 use std::marker::PhantomData;
-use std::sync::Arc;
 
-macro_rules! _apply_bit_opts {
-    ($t: ident, $(($tr: ident, $func: ident)),*) => (
-        $(
-            impl $tr for $t {
-                fn $func(&mut self, rhs: $t) {
-                    self.buf.$func(rhs.storage)
-                }
-            }
-        )*
-    );
-    ($t: ident, $(($tr: ident, $func: ident, $out: ident)),*) => (
-        $(
-            impl $tr for $t {
-                type Output = $t;
-                fn $func(self, rhs: $t) -> $t {
-                    $t::new(self.buf.$func(rhs.storage))
-                }
-            }
-         )*
-    )
-}
-macro_rules! nbits_set {
-    ($(($t: ident, $size: expr, $mask: expr)),*) => (
-        $(
-            /// Struct for each NBits
-            #[derive(Copy, Clone, Eq, Debug, PartialEq, Hash, Deref)]
-            pub struct $t<'a>(&'a usize);
-            impl<'a> $t<'a> {
-                pub fn new(value: &'a usize) -> Self {
-                    $t(value)
-                }
-            }
-            impl<'a> Nbits for $t<'a> {
-                #[inline]
-                fn bits() -> usize {
-                    $size
-                }
-                #[inline]
-                fn mask() -> Self {
-                    $t::new($mask)
-                }
-                #[inline]
-                fn zero() -> Self {
-                    $t::new(&ZERO_BIT)
-                }
-                #[inline]
-                fn val(&self) -> usize {
-                    self.0 & $mask
-                }
-            }
-
-            impl<'a> Deref for $t<'a> {
-                type Target = usize;
-                fn deref(&self) -> &usize {
-                    self.0
-                }
-            }
-
-            impl<'a> From<$t<'a>> for usize {
-                fn from(v: $t<'a>) -> usize {
-                    v.val()
-                }
-            }
-
-            impl<'a> From<&'a usize> for $t<'a> {
-                fn from(v: &'a usize) -> $t<'a> {
-                    $t::new(v)
-                }
-            }
-            /*
-            impl Into<$t> for usize {
-                fn into(self) -> $t {
-                    $t(self)
-                }
-            }
-            */
-            /*
-            _apply_bit_opts! {
-                $t,
-                (BitAnd, bitand, $t),
-                (BitXor, bitxor, $t),
-                (BitOr, bitor, $t)
-            }
-            _apply_bit_opts! {
-                $t,
-                (BitAndAssign, bitand_assign),
-                (BitOrAssign, bitor_assign),
-                (BitXorAssign, bitxor_assign)
-            }
-            */
-        )*
-        #[test]
-        fn test_struct_as_nbits() {
-            $(
-                assert_eq!(mem::size_of::<$t>(), mem::size_of::<usize>());
-                assert_eq!($t::bits(), $size);
-                assert_eq!($t::zero().val(), 0);
-                assert_eq!($t::mask().val().count_ones(), $size);
-                assert_eq!($t::mask().val().trailing_zeros(), 0);
-                assert_eq!($t::mask().val().leading_zeros() as usize, mem::size_of::<usize>() * 8 - $size);
-             )*
-        }
-        //#[derive(Copy, Clone, Eq, Debug, PartialEq, Hash)]
-        //pub enum AsNbits {
-        //    $($t($t),)*
-        //}
-
-        //pub use AsNbits::*;
-        /*
-        impl AsNbits {
-            pub fn new(value: usize, width: usize) -> Self {
-                match width {
-                    $($size => $t::new(value),)*
-                    _ => unreachable!(),
-                }
-            }
-            pub fn ones(width: usize) -> Self {
-                match width {
-                    $($size => AsNbits::$t($t::ones()), )*
-                    _ => unreachable!(),
-                }
-            }
-            pub fn bits(self) -> usize {
-                match self {
-                    $(AsNbits::$t(..) => $t::bits(),)*
-                }
-            }
-
-            pub fn zero(width: usize) -> Self {
-                match self {
-                    $(AsNbits::$t(..) => AsNbits::$t($t::zero()),)*
-                }
-            }
-
-            pub fn val(self) -> usize {
-                match self {
-                    $(AsNbits::$t(v) => v.val(),)*
-                }
-            }
-        }
-        impl Deref for AsNbits {
-            type Target = usize;
-            fn deref(&self) -> &usize {
-                match self {
-                    $(&AsNbits::$t(ref v) => &v.storage,)*
-                }
-            }
-        }*/
-     )
-}
-
-static ZERO_BIT: usize = 0;
-static ONE_BIT_MASK: usize = 0b1;
-static TWO_BIT_MASK: usize = 0b11;
-nbits_set! {
-    (As1bits, 1, &ONE_BIT_MASK),
-    (As2bits, 2, &TWO_BIT_MASK)
-}
-pub trait Nbits:
-    // Default +
-    // BitAnd<Output=usize> +
-{
+pub trait Nbits {
     fn bits() -> usize;
-    fn mask() -> Self;
-    fn zero() -> Self;
-    fn val(&self) -> usize;
 }
 
 pub struct NbitsVec<T: Nbits, B = usize> {
@@ -222,7 +54,7 @@ B:  Shl<usize, Output=B> +
     /// # Examples
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
     /// # }
@@ -246,7 +78,7 @@ B:  Shl<usize, Output=B> +
     /// # Examples
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// assert!(vec.capacity() >= 10);
@@ -296,7 +128,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
     /// assert!(v.capacity() == 0);
@@ -322,7 +154,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// use bits_vec::raw::*;
+    /// use bits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
     /// assert!(v.capacity() == 0);
@@ -349,7 +181,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// vec.shrink_to_fit();
@@ -375,7 +207,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(2);
     /// unsafe { vec.set_len(2) }
@@ -409,7 +241,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
     /// unsafe {
@@ -472,7 +304,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// assert_eq!(vec.bits(), 0);
@@ -491,7 +323,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// assert!(vec.is_empty());
@@ -534,7 +366,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// vec.reserve(10);
@@ -571,7 +403,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// vec.reserve(10);
@@ -608,9 +440,12 @@ B:  Shl<usize, Output=B> +
             panic!("required setting {} bits but max is {}", n, max_n);
         }
         let mut value = bits;
-        for idx in (at..).take(n) {
-            self.set_bit(idx, value & 1 == 1);
-            value.shr_assign(1);
+        match n {
+            1 => self.set_bit(at, bits & 1 == 1),
+            _ => for idx in (at..).take(n) {
+                self.set_bit(idx, value & 1 == 1);
+                value.shr_assign(1);
+            }
         }
     }
     pub fn get_bits(&self, at: usize, n: usize) -> usize {
@@ -649,18 +484,11 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// unsafe { vec.set_len(2) }
     /// vec.set(0, 0b11usize);
-    /// assert!(vec.get_bit(0).unwrap());
-    /// assert!(vec.get_bit(1).unwrap());
-    /// let a = 0;
-    /// let v = As2bits::new(&a);
-    /// vec.set(0, v.val());
-    /// assert_eq!(vec.get_bit(0), Some(false));
-    /// assert_eq!(vec.get_bit(1), Some(false));
     /// # }
     /// ```
     pub fn set(&mut self, index: usize, value: usize) {
@@ -673,7 +501,7 @@ B:  Shl<usize, Output=B> +
     ///
     /// ```
     /// # extern crate bits_vec;
-    /// # use bits_vec::raw::*;
+    /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// unsafe { vec.set_len(2) }
@@ -703,53 +531,3 @@ B:  Shl<usize, Output=B> +
     }
 }
 
-#[cfg(test)]
-mod tests {
-}
-//
-// pub struct Value<T: Nbits, S: BitOr<Output=usize> = usize> {
-// refer: Arc<NbitsVec<T, S>>,
-// index: usize,
-// }
-//
-// impl<T: Nbits> Value<T> {
-// fn to_nbits(&self) -> T {
-// unimplemented!();
-// }
-// fn val(&self) -> usize {
-// self.to_nbits().val()
-// }
-// fn set<V: AsRef<T>>(&mut self, val: V) {
-// unimplemented!();
-// }
-// }
-//
-// pub struct Iter<T: Nbits, S = usize> {
-// parent: Arc<NbitsVec<T, S>>,
-// index: usize,
-// }
-//
-// impl<T: Nbits> Iter<T> {
-// fn finished(&self) -> bool {
-// unsafe { (*self.parent).len() >= self.index }
-// }
-// }
-//
-// impl<T: Nbits> Iterator for Iter<T> {
-// type Item = T;
-// #[inline]
-// fn next(&mut self) -> Option<T> {
-// self.index += 1;
-// if self.finished() {
-// None
-// } else {
-// Some(unsafe { (*self.parent).get(self.index) })
-// }
-// }
-// }
-//
-// pub struct IterMut<T: Nbits, S = usize> {
-// parent: *mut NbitsVec<T, S>,
-// index: usize,
-// }
-//
