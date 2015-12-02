@@ -1,14 +1,14 @@
 #![feature(custom_derive)]
 #![feature(concat_idents)]
-#![feature(op_assign_traits)]
 #![feature(alloc)]
-#![feature(zero_one)]
+#![feature(step_by)]
 #![feature(test)]
 
 extern crate alloc;
 extern crate num;
 
-#[cfg(test)] extern crate test;
+#[cfg(test)]
+extern crate test;
 mod raw;
 mod types;
 pub use raw::*;
@@ -28,16 +28,20 @@ mod tests {
                         use test::{self, Bencher};
                         #[bench]
                         fn get(b: &mut Bencher) {
+                            let n = test::black_box(1000);
+                            let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
+                            unsafe { vec.set_len(n) }
+                            for i in 0..n {
+                                vec.set(i, i as u64);
+                            }
                             b.iter(|| {
-                                let n = test::black_box(1000);
-                                let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
-                                unsafe { vec.set_len(n) }
                                 (0..n).fold(0, |a, i| a + vec.get(i));
                             })
                         }
                     }
                 )*
             }
+            /*
             mod set {
                 $(
                     mod $m {
@@ -46,12 +50,31 @@ mod tests {
                         #[bench]
                         fn set(b: &mut Bencher) {
                             b.iter(|| {
-                                let n = test::black_box(1000);
+                                let n = test::black_box(100);
                                 let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
                                 unsafe { vec.set_len(n) };
                                 for i in 0..n {
                                     vec.set(i, i as u64);
                                 }
+                            });
+                        }
+                    }
+                )*
+            }
+            */
+            /*
+            mod fill {
+                $(
+                    mod $m {
+                        use super::super::super::*;
+                        use test::{self, Bencher};
+                        #[bench]
+                        fn bench(b: &mut Bencher) {
+                            b.iter(|| {
+                                let n = test::black_box(100);
+                                let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
+                                unsafe { vec.set_len(n) };
+                                vec.fill_bits(0, n, false);
                             });
                         }
                     }
@@ -65,7 +88,7 @@ mod tests {
                         #[bench]
                         fn bench(b: &mut Bencher) {
                             b.iter(|| {
-                                let n = test::black_box(1000);
+                                let n = test::black_box(100);
                                 let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
                                 unsafe { vec.set_len(n) };
                                 for i in 0..n {
@@ -76,6 +99,7 @@ mod tests {
                     }
                 )*
             }
+            */
         }
     }
     bench_test! {
