@@ -6,6 +6,8 @@
 #![feature(test)]
 
 extern crate alloc;
+extern crate num;
+
 #[cfg(test)] extern crate test;
 mod raw;
 mod types;
@@ -48,7 +50,26 @@ mod tests {
                                 let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
                                 unsafe { vec.set_len(n) };
                                 for i in 0..n {
-                                    vec.set(i, i);
+                                    vec.set(i, i as u64);
+                                }
+                            });
+                        }
+                    }
+                )*
+            }
+            mod set_bit_by_bit {
+                $(
+                    mod $m {
+                        use super::super::super::*;
+                        use test::{self, Bencher};
+                        #[bench]
+                        fn bench(b: &mut Bencher) {
+                            b.iter(|| {
+                                let n = test::black_box(1000);
+                                let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
+                                unsafe { vec.set_len(n) };
+                                for i in 0..n {
+                                    vec.set_bit_by_bit(i, i as u64);
                                 }
                             });
                         }

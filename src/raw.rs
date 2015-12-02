@@ -1,4 +1,5 @@
 use alloc::raw_vec::RawVec;
+use num::{PrimInt, cast};
 use std::ops::*;
 use std::num::{One, Zero};
 use std::mem;
@@ -17,15 +18,7 @@ pub struct NbitsVec<T: Nbits, B = usize> {
 
 impl<
 T:  Nbits,
-B:  Default +
-    Shl<usize, Output=B> +
-    Shr<usize, Output=B> +
-    Eq + PartialEq + Copy +
-    One +
-    Zero +
-    Not<Output=B> +
-    BitOr<Output=B> +
-    BitAnd<Output=B>
+B:  Default
 > Default for NbitsVec<T, B> {
     fn default() -> Self {
         NbitsVec {
@@ -38,14 +31,9 @@ B:  Default +
 
 impl<
 T:  Nbits,
-B:  Shl<usize, Output=B> +
+B:  PrimInt +
+    Shl<usize, Output=B> +
     Shr<usize, Output=B> +
-    BitOr<Output=B> +
-    BitAnd<Output=B> +
-    Eq + PartialEq + Copy +
-    One +
-    Zero +
-    Not<Output=B> +
 > NbitsVec<T, B> {
     /// Constructs a new, empty NbitsVec<T>
     ///
@@ -488,14 +476,36 @@ B:  Shl<usize, Output=B> +
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// unsafe { vec.set_len(2) }
-    /// vec.set(0, 0b11usize);
+    /// vec.set(0, 0b11);
     /// # }
     /// ```
-    pub fn set(&mut self, index: usize, value: usize) {
+    pub fn set(&mut self, index: usize, value: u64) {
         if index >= self.len {
             panic!("attempt to set at {} but only {}", index, self.len);
         }
-        self.set_bits(index * T::bits(), T::bits(), value.into());
+        let element_bits = mem::size_of::<B>() * 8;
+        match T::bits() {
+            1 => self.set_bit(index, value & 1 == 1),
+            n if element_bits > n && element_bits % n == 0 => {
+                let storage_index = index * n / element_bits;
+                let storage_offset = index * n % element_bits;
+                let mask: B = (1..n).fold(B::one(), |v, _x| v << 1 | B::one()) << storage_offset;
+                unsafe {
+                    let ptr = self.buf.ptr().offset(storage_index as isize);
+                    ptr::write(ptr, ptr::read(ptr) & !mask | (mask & cast(value << storage_offset).unwrap()));
+                }
+            }
+            _ => self.set_bits(index * T::bits(), T::bits(), value as usize)
+        }
+    }
+    pub fn set_bit_by_bit(&mut self, index: usize, value: u64) {
+        if index >= self.len {
+            panic!("attempt to set at {} but only {}", index, self.len);
+        }
+        match T::bits() {
+            1 => self.set_bit(index, value & 1 == 1),
+            _ => self.set_bits(index * T::bits(), T::bits(), value as usize)
+        }
     }
     /// Examples
     ///
@@ -505,7 +515,7 @@ B:  Shl<usize, Output=B> +
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// unsafe { vec.set_len(2) }
-    /// vec.set(0, 0b11usize);
+    /// vec.set(0, 0b11);
     /// assert_eq!(vec.get(0), 0b11);
     /// # }
     /// ```
