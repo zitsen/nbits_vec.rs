@@ -24,12 +24,31 @@ mod tests {
                         use super::super::super::*;
                         use test::{self, Bencher};
                         #[bench]
-                        fn get(b: &mut Bencher) {
+                        fn bench(b: &mut Bencher) {
                             let n = test::black_box(1000);
                             let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                             unsafe { vec.set_len(n) }
                             b.iter(|| {
                                 (0..n).fold(0, |_a, i| vec.get(i));
+                            })
+                        }
+                    }
+                )*
+            }
+            mod resize {
+                $(
+                    mod $m {
+                        use super::super::super::*;
+                        use test::{self, Bencher};
+                        use num::Zero;
+                        #[bench]
+                        fn bench(b: &mut Bencher) {
+                            b.iter(|| {
+                                let n = test::black_box(1000);
+                                let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::new();
+                                for i in (0..n).step_by(10) {
+                                    vec.resize(i, $storage::zero());
+                                }
                             })
                         }
                     }

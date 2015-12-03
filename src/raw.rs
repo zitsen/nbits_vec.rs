@@ -368,36 +368,7 @@ B:  PrimInt
     pub fn split_off(&mut self, at: usize) -> Self {
         unimplemented!();
     }
-    /// Resizes the Vec in-place so that len() is equal to new_len.
-    ///
-    /// If new_len is greater than len(), the Vec is extended by the difference, with each
-    /// additional slot filled with value. If new_len is less than len(), the Vec is simply
-    /// truncated.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # extern crate bits_vec;
-    /// # use bits_vec::*;
-    /// # fn main() {
-    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
-    /// vec.resize(10, 0);
-    /// # }
-    /// ```
-    pub fn resize(&mut self, new_len: usize, value: B) {
-        let len = self.len();
-        if len < new_len {
-            let n = new_len - len;
-            self.reserve_exact(n);
-            self.len = new_len;
-            for i in len..new_len {
-                self.set(i, value);
-            }
-            //self.fill_as(len, n, value);
-        } else {
-            self.truncate(new_len);
-        }
-    }
+
     pub fn push_all(&mut self, other: &[T]) {
         unimplemented!();
     }
@@ -407,150 +378,78 @@ B:  PrimInt
         unimplemented!();
     }
 
-    /*
-    #[inline]
-    fn fill_as(&mut self, at: usize, n: usize, value: B) {
-        // Ignore when required length is empty.
-        if n.is_zero() {
-            return;
-        }
 
-        if value.is_zero() {
-            // Fill all bits as zero when value is 0.
-            self.fill_bits_as_zero(at * Self::unit_bits(), n * Self::unit_bits());
-        } else if value.not().is_zero() {
-            // Fill all bits as one when value is -1.
-            self.fill_bits_as_one(at * Self::unit_bits(), n * Self::unit_bits());
-        } else if Self::unit_bits() == 1 {
-            // Fill the buf bit by bit as required.
-            self.fill_bits(at, n, value & 1 == 1);
+    /// Resizes the Vec in-place so that len() is equal to new_len.
+    ///
+    /// If new_len is greater than len(), the Vec is extended by the difference, with each
+    /// additional slot filled with value. If new_len is less than len(), the Vec is simply
+    /// truncated. Note that `resize` expand memeory will use `reserve_exact` method to
+    /// fit size.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// vec.resize(10, 0);
+    /// assert_eq!(vec.capacity(), std::mem::size_of::<usize>() * 8 / 2);
+    /// # }
+    /// ```
+    #[inline]
+    pub fn resize(&mut self, new_len: usize, value: B) {
+        let len = self.len();
+        if len < new_len {
+            let n = new_len - len;
+            self.reserve_exact(n);
+            unsafe {
+                self.fill_buf(len, n, value);
+                self.len = new_len;
+            }
         } else {
-            let elem_bits = Self::buf_unit_bits();
-            let item_value = value & T::mask();
-            match (Self::unit_bits(), elem_bits / n, elem_bits % n) {
-                // 2, 4, 8, 16..
-                (n, mul, rem) if mul > 0 && rem == 0 => {
-                    let value: B = num::cast((0..mul).fold(0, |v, _x| v << n | item_value))
-                                       .expect("cast from usize to buf elements failed");
-
-                    match Self::index_range_to_buf(at, at + n) {
-                        ((start_idx, start_offset), (end_idx, end_offset)) if start_idx ==
-                                                                              end_idx => {
-                            unsafe {
-                                self.set_buf_unit_bits(at, n, value);
-                            }
-                        }
-                        ((start_idx, start_offset), (end_idx, end_offset)) => {
-                            unsafe {
-                                self.set_buf_unit_bits(at,
-                                                       Self::buf_unit_bits(),
-                                                       value);
-                                self.set_buf_unit_bits(end_idx * elem_bits, end_offset, value);
-                                let start_idx = start_idx + 1;
-                                (start_idx..end_idx)
-                                    .fold(self.buf.ptr().offset(start_idx as isize), |ptr, _x| {
-                                        ptr::write(ptr, value);
-                                        ptr.offset(1)
-                                    });
-                            }
-                        }
-                    }
-                }
-                // 16, 32, 64, 128..
-                // This should use a warning instead
-                (n, mul, rem) if n % elem_bits == 0 => {
-                    let mul = n / elem_bits;
-                    let ((start, _), (end, _)) = Self::index_range_to_buf(at, at + n);
-                    for i in (start..end).step_by(mul) {
-                        for j in 0..mul {
-                            unsafe {
-                                let ptr = self.buf.ptr().offset(i as isize);
-                                let value = num::cast(item_value >> (j * Self::unit_bits()))
-                                                .expect("cast from usize to buf element");
-                                ptr::write(ptr, value);
-                            }
-                        }
-                    }
-                }
-                _ => {
-                    for i in (at..).take(n) {
-                        self.set(i, item_value);
-                    }
-                }
-            }
+            self.truncate(new_len);
         }
     }
 
+    /// Fill vector buf as `value` from `index` with size `length`.
+    ///
+    /// ## Unsafety
+    ///
+    /// The method doesnot check the index validation of the vector.
+    ///
     #[inline]
-    pub fn fill_bits(&mut self, at: usize, n: usize, bit: bool) {
-        if n == 0 {
-            return;
+    pub unsafe fn fill_buf(&mut self, index: usize, length: usize, value: B) {
+        let unit = Self::unit_bits();
+        if length == 1 {
+            return self.set_buf_bits(index * unit, unit, value);
         }
-        if bit {
-            self.fill_bits_as_one(at, n);
-        } else {
-            self.fill_bits_as_zero(at, n);
-        }
-    }
-
-    #[inline]
-    fn fill_bits_as_one(&mut self, at: usize, n: usize) {
-        let end_bits = at.checked_add(n).expect("usize over added");
-        if end_bits > self.bits() {
-            panic!("fill bits out of bounds (requires {} but only {})",
-                   end_bits,
-                   self.bits());
-        }
-        let (buf_start, start_offset) = Self::index_to_buf(at);
-        let (buf_end, end_offset) = Self::index_to_buf(end_bits);
-        match (buf_start, buf_end) {
-            (start, end) if start == end => {
-                unsafe {
-                    self.set_buf_unit_bits(start, start_offset, end_offset, B::zero().not());
-                }
+        let buf_unit = Self::buf_unit_bits();
+        if length <= buf_unit / unit || buf_unit % unit != 0 {
+            for i in (index..).take(length) {
+                self.set_buf_bits(i * unit, unit, value);
             }
-            (start, end) => {
-                unsafe {
-                    let ones = B::zero().not();
-                    self.set_buf_unit_bits(start, start_offset, Self::buf_unit_bits(), ones);
-                    self.set_buf_unit_bits(end, 0, end_offset, ones);
-                    let start = start + 1;
-                    (start..end).fold(self.buf.ptr().offset(start as isize), |p, _x| {
-                        ptr::write(p, ones);
-                        p.offset(1)
+        }
+
+        let mul = buf_unit / unit;
+        let item = (0..mul).fold(B::zero(), |v, _x| v << unit | value);
+        match Self::index_range_to_buf(index, length) {
+            ((start_idx, start_offset), (end_idx, end_offset)) => {
+                self.set_buf_unit_bits(index,
+                                       buf_unit - start_offset,
+                                       item);
+                self.set_buf_unit_bits(end_idx * buf_unit,
+                                       end_offset,
+                                       item);
+                let start_idx = start_idx + 1;
+                (start_idx..end_idx)
+                    .fold(self.buf.ptr().offset(start_idx as isize), |ptr, _x| {
+                        ptr::write(ptr, item);
+                        ptr.offset(1)
                     });
-                }
             }
         }
     }
-    #[inline]
-    fn fill_bits_as_zero(&mut self, at: usize, n: usize) {
-        let end_bits = at.checked_add(n).expect("usize over added");
-        if end_bits > self.bits() {
-            panic!("fill bits out of bounds (requires {} but only {})",
-                   end_bits,
-                   self.bits());
-        }
-        let (buf_start, start_offset) = Self::index_to_buf(at);
-        let (buf_end, end_offset) = Self::index_to_buf(end_bits);
-        match (buf_start, buf_end) {
-            (start, end) if start == end => {
-                unsafe { self.mask_buf_unit(start, start_offset, end_offset) }
-            }
-            (start, end) => {
-                unsafe {
-                    self.mask_buf_unit(start, start_offset, Self::buf_unit_bits());
-                    let start = start + 1;
-                    (start..end).fold(self.buf.ptr().offset(start as isize), |p, _x| {
-                        ptr::write(p, B::zero());
-                        p.offset(1)
-                    });
-                    self.mask_buf_unit(end, 0, end_offset);
-                }
-            }
-        }
-    }
-    */
 
     /// ## Examples
     ///
@@ -703,17 +602,14 @@ B:  PrimInt
     /// Mask buf element of `index` at offset `(from, to)` as zero.
     #[inline]
     unsafe fn zero_buf_unit_bits(&mut self, offset: usize, length: usize) {
-        let (index, from) = Self::bit_index_to_buf(offset);
-        let mask = (from..).take(length).fold(B::zero(), |mask, _x| mask << 1 | B::one());
-        let ptr = self.buf.ptr().offset(index as isize);
-        ptr::write(ptr, ptr::read(ptr) & mask.not());
+        self.set_buf_unit_bits(offset, length, B::zero());
     }
 
     /// Set buf element of `index` at offset `from` to `to` as `value`.
     #[inline]
     unsafe fn set_buf_unit_bits(&mut self, offset: usize, length: usize, value: B) {
-        let (index, from) = Self::bit_index_to_buf(offset);
-        let mask = (from..).take(length).fold(B::zero(), |mask, _x| mask << 1 | B::one());
+        let (index, offset) = Self::bit_index_to_buf(offset);
+        let mask = (offset..).take(length).fold(B::zero(), |mask, _x| mask << 1 | B::one());
         let ptr = self.buf.ptr().offset(index as isize);
         let cur = ptr::read(ptr);
         let old = cur >> offset & mask;
@@ -866,8 +762,8 @@ B:  PrimInt
 
     /// Converts the vector index range to buf `(index, offset)` range tuple.
     #[inline]
-    fn index_range_to_buf(start: usize, end: usize) -> ((usize, usize), (usize, usize)) {
-        (Self::index_to_buf(start), Self::index_to_buf(end))
+    fn index_range_to_buf(index: usize, length: usize) -> ((usize, usize), (usize, usize)) {
+        (Self::index_to_buf(index), Self::index_to_buf(index + length))
     }
 
     /// Converts bit index to buf `(index, offset)` tuple.
