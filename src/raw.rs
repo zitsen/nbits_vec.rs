@@ -1,5 +1,5 @@
 use alloc::raw_vec::RawVec;
-use num::{self, PrimInt, Zero, cast, zero};
+use num::{self, PrimInt};
 use std::cmp;
 use std::ops::*;
 use std::fmt::{self, Debug, Display};
@@ -25,7 +25,6 @@ pub struct NbitsVec<T: Nbits, B = usize> {
 impl<
 T:  Nbits,
 B:  PrimInt,
-    // :  Default
 > Default for NbitsVec<T, B> {
     fn default() -> Self {
         NbitsVec {
@@ -36,7 +35,7 @@ B:  PrimInt,
     }
 }
 
-impl<T: Nbits, B: PrimInt + Display + fmt::LowerHex> Debug for NbitsVec<T, B> {
+impl<T: Nbits, B: PrimInt + fmt::LowerHex> Debug for NbitsVec<T, B> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f,
                     "NbitsVec<{}> {{ len: {}, buf: RawVec {{ cap: {}, [",
@@ -46,7 +45,7 @@ impl<T: Nbits, B: PrimInt + Display + fmt::LowerHex> Debug for NbitsVec<T, B> {
         let ptr = self.buf.ptr();
         for i in 0..self.buf.cap() {
             unsafe {
-                try!(write!(f, "{:#x}, ", ptr::read(ptr.offset(cast(i).expect("")))));
+                try!(write!(f, "{:#x}, ", ptr::read(ptr.offset(i as isize))));
             }
         }
         write!(f, "] }}")
