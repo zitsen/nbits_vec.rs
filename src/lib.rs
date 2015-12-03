@@ -16,9 +16,6 @@ pub use types::*;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use test::Bencher;
-
     macro_rules! bench_test {
         ($(($m: ident, $nbits: ident, $storage: ident)),*) => {
             mod get {
@@ -35,7 +32,7 @@ mod tests {
                                 vec.set(i, i as u64);
                             }
                             b.iter(|| {
-                                (0..n).fold(0, |a, i| a + vec.get(i));
+                                (0..n).fold(0, |_a, i| vec.get(i));
                             })
                         }
                     }
