@@ -783,18 +783,18 @@ B:  PrimInt
                    length,
                    buf_unit);
         }
-        match (Self::unit_bits(), Self::buf_unit_bits(), offset, length) {
-            (_, _, offset, 1) => {
-                self.get_buf_unit_bit(offset)
-            }
-            (unit, buf_unit, offset, length) if unit == buf_unit => {
+        if length == 1 {
+            return self.get_buf_unit_bit(offset);
+        }
+        match (Self::unit_bits(), Self::buf_unit_bits()) {
+            (unit, buf_unit) if unit == buf_unit => {
                 // NOTE: maybe unreachable!() is better
                 self.get_buf_unit_bits(offset, length)
             }
-            (unit, buf_unit, offset, length) if unit < buf_unit && buf_unit % unit == 0 => {
+            (unit, buf_unit) if unit < buf_unit && buf_unit % unit == 0 => {
                 self.get_buf_unit_bits(offset, length)
             }
-            (unit, buf_unit, offset, length) => {
+            (unit, buf_unit) => {
                 (offset..cmp::min(offset + length, self.buf_bits()))
                     .map(|x| self.get_buf_unit_bit(x))
                     .fold(B::zero(), |v, x| v << 1 | x)
