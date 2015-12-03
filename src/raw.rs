@@ -1,5 +1,6 @@
 use alloc::raw_vec::RawVec;
 use num::{self, PrimInt, Zero, cast, zero};
+use std::cmp;
 use std::ops::*;
 use std::fmt::{self, Debug, Display};
 use std::mem;
@@ -357,12 +358,22 @@ B:  PrimInt
     /// additional slot filled with value. If new_len is less than len(), the Vec is simply
     /// truncated.
     ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// vec.resize(10, 0);
+    /// # }
+    /// ```
     pub fn resize(&mut self, new_len: usize, value: usize) {
         let len = self.len();
         if len < new_len {
             let n = new_len - len;
-            self.len = new_len;
             self.reserve_exact(n);
+            self.len = new_len;
             self.fill_as(len, n, value);
         } else {
             self.truncate(new_len);
@@ -513,73 +524,6 @@ B:  PrimInt
         }
     }
 
-    /// Mask buf element of `index` at offset `(from, to)` as zero.
-    #[inline]
-    unsafe fn mask_buf_unit(&mut self, index: usize, from: usize, to: usize) {
-        let mask = (from..to).fold(B::zero(), |mask, _x| mask << 1 | B::one());
-        let ptr = self.buf.ptr().offset(index as isize);
-        ptr::write(ptr, ptr::read(ptr) & mask.not());
-    }
-
-    /// Set buf element of `index` at offset `from` to `to` as `value`.
-    #[inline]
-    unsafe fn set_buf_unit(&mut self, index: usize, from: usize, to: usize, value: B) {
-        let mask = (from..to).fold(B::zero(), |mask, _x| mask << 1 | B::one());
-        let ptr = self.buf.ptr().offset(index as isize);
-        ptr::write(ptr, ptr::read(ptr) & mask.not() | (mask & value << from));
-    }
-
-    /// Set buf unit bit at `index`th unit of `offset`bit.
-    #[inline]
-    unsafe fn set_buf_unit_bit(&mut self, index: usize, offset: usize, bit: bool) {
-        let mask = B::one() << offset;
-        let ptr = self.buf.ptr().offset(index as isize);
-        let cur = ptr::read(ptr);
-        let origin = cur >> offset & B::one();
-        match (origin == B::one(), bit) {
-            (lhs, rhs) if lhs == rhs => (),
-            (_, true) => ptr::write(ptr, cur | mask),
-            (_, false) => ptr::write(ptr, cur & mask.not()),
-        }
-    }
-    /// Get buf unit bit at `index`th unit of `offset`bit.
-    #[inline]
-    unsafe fn get_buf_unit_bit(&self, index: usize, offset: usize) -> bool {
-        let ptr = self.buf.ptr().offset(index as isize);
-        ptr::read(ptr) >> offset & B::one() == B::one()
-    }
-
-    /// Get buf `length` bits of unit at `index`th unit at `offset`bit
-    #[inline]
-    unsafe fn get_buf_unit_bits(&self, index: usize, offset: usize, length: usize) -> B {
-        let ptr = self.buf.ptr().offset(index as isize);
-        ptr::read(ptr) << (Self::unit_bits() - offset - length) >> (Self::unit_bits() - length)
-    }
-
-    unsafe fn get_buf_bits(&self, offset: usize, length: usize) -> u64 {
-        if length > 64 {
-            panic!("get buf bits longer than 64 is not supported");
-        }
-        match (Self::unit_bits(), Self::buf_unit_bits(), offset, length) {
-            (unit, buf_unit, offset, length) if unit == buf_unit => unreachable!(),
-            (unit, buf_unit, offset, length) if unit < buf_unit && buf_unit % unit == 0 => {
-                cast(self.get_buf_unit_bits(offset / buf_unit, offset % buf_unit, length))
-                    .expect("Cast from B to u64")
-            }
-            (unit, buf_unit, offset, length) => {
-                (offset..)
-                    .take(length)
-                    .map(|x| self.get_buf_unit_bit(x / buf_unit, x % buf_unit))
-                    .fold(0, |v, x| {
-                        if x {
-                            v << 1 | 1
-                        } else {
-                            v << 1
-                        }
-                    })
-            }
-        }
-    }
 
     /// Set `bit` at some bit index.
     ///
@@ -644,9 +588,9 @@ B:  PrimInt
         let bits = self.bits();
         if at >= bits {
             return None;
+        } else {
+            unsafe { Some(self.get_buf_unit_bit(at) == B::one()) }
         }
-        let (index, offset) = Self::bit_index_to_buf(at);
-        Some(unsafe { self.get_buf_unit_bit(index, offset) })
     }
 
 
@@ -659,7 +603,7 @@ B:  PrimInt
         match n {
             1 => self.set_bit(at, bits & 1 == 1),
             // 2 => unsafe {
-            // self.set_buf_unit_bits(at, n, bits);
+            //  self.set_buf_unit_bits(at, n, bits);
             // },
             _ => {
                 (at..).take(n).fold(bits, |value, x| {
@@ -670,29 +614,11 @@ B:  PrimInt
         }
     }
     pub fn get_bits(&self, at: usize, n: usize) -> u64 {
-        //unsafe {
-        //    return self.get_buf_bits(at, n)
-        //}
         let max_n = mem::size_of::<usize>();
         if n > max_n {
             panic!("required setting {} bits but max is {}", n, max_n);
         }
-        (at..).take(n).fold(0, |v, x| {
-            if self.get_bit(x).expect("bit by bit") {
-                (v << 1) | 1
-            } else {
-                v << 1
-            }
-        })
-    }
-
-    fn set_two_bits(&mut self, at: usize, bit: usize) {
-        let bits = self.bits() / 2;
-        if at >= bits {
-            panic!("attempt to set two bits at {}, but only have {}", at, bits);
-        }
-        let element_bits = mem::size_of::<usize>() * 8 / 2;
-        let storage_index = at / element_bits;
+        return num::cast(unsafe { self.get_buf_bits(at, n) }).expect("get buf bits ok");
     }
 
     pub fn push_all(&mut self, other: &[T]) {
@@ -722,18 +648,18 @@ B:  PrimInt
         let element_bits = Self::buf_unit_bits();
         match Self::unit_bits() {
             1 => self.set_bit(index, value & 1 == 1),
-            /*n if element_bits > n && element_bits % n == 0 => {
-                let storage_index = index * n / element_bits;
-                let storage_offset = index * n % element_bits;
-                let mask: B = (1..n).fold(B::one(), |v, _x| v << 1 | B::one()) << storage_offset;
-                unsafe {
-                    let ptr = self.buf.ptr().offset(storage_index as isize);
-                    ptr::write(ptr,
-                               ptr::read(ptr) & !mask |
-                               (mask & cast(value << storage_offset)
-                                .expect("cast to u64 to B")));
-                }
-            }*/
+            // n if element_bits > n && element_bits % n == 0 => {
+            // let storage_index = index * n / element_bits;
+            // let storage_offset = index * n % element_bits;
+            // let mask: B = (1..n).fold(B::one(), |v, _x| v << 1 | B::one()) << storage_offset;
+            // unsafe {
+            // let ptr = self.buf.ptr().offset(storage_index as isize);
+            // ptr::write(ptr,
+            // ptr::read(ptr) & !mask |
+            // (mask & cast(value << storage_offset)
+            // .expect("cast to u64 to B")));
+            // }
+            // }
             _ => self.set_bits(index * Self::unit_bits(), Self::unit_bits(), value as usize),
         }
     }
@@ -765,6 +691,117 @@ B:  PrimInt
         self.get_bits(index * Self::unit_bits(), Self::unit_bits())
     }
 
+    /// Total bits in buf.
+    pub fn buf_bits(&self) -> usize {
+        self.buf.cap() * Self::buf_unit_bits()
+    }
+
+    /// Mask buf element of `index` at offset `(from, to)` as zero.
+    #[inline]
+    unsafe fn mask_buf_unit(&mut self, index: usize, from: usize, to: usize) {
+        let mask = (from..to).fold(B::zero(), |mask, _x| mask << 1 | B::one());
+        let ptr = self.buf.ptr().offset(index as isize);
+        ptr::write(ptr, ptr::read(ptr) & mask.not());
+    }
+
+    /// Set buf element of `index` at offset `from` to `to` as `value`.
+    #[inline]
+    unsafe fn set_buf_unit(&mut self, index: usize, from: usize, to: usize, value: B) {
+        let mask = (from..to).fold(B::zero(), |mask, _x| mask << 1 | B::one());
+        let ptr = self.buf.ptr().offset(index as isize);
+        ptr::write(ptr, ptr::read(ptr) & mask.not() | (mask & value << from));
+    }
+
+    /// Set buf unit bit at `index`th unit of `offset`bit.
+    #[inline]
+    unsafe fn set_buf_unit_bit(&mut self, index: usize, offset: usize, bit: bool) {
+        let mask = B::one() << offset;
+        let ptr = self.buf.ptr().offset(index as isize);
+        let cur = ptr::read(ptr);
+        let origin = cur >> offset & B::one();
+        match (origin == B::one(), bit) {
+            (lhs, rhs) if lhs == rhs => (),
+            (_, true) => ptr::write(ptr, cur | mask),
+            (_, false) => ptr::write(ptr, cur & mask.not()),
+        }
+    }
+    /// Get buf unit bit at `index`th unit of `offset`bit.
+    #[inline]
+    unsafe fn get_buf_unit_bit(&self, offset: usize) -> B {
+        let (index, offset) = Self::bit_index_to_buf(offset);
+        let ptr = self.buf.ptr().offset(index as isize);
+        ptr::read(ptr) >> offset & B::one()
+    }
+
+    /// Get buf `length` bits of unit at `index`th unit's `offset`th bit
+    #[inline]
+    unsafe fn get_buf_unit_bits(&self, offset: usize, length: usize) -> B {
+        let offset = Self::bit_index_to_buf(offset);
+        let ptr = self.buf.ptr().offset(offset.0 as isize);
+        let unit = Self::buf_unit_bits();
+        (ptr::read(ptr) << (unit - offset.1 - length)) >> (unit - length)
+    }
+
+    /// Get `length` bits of buf at `offset`th bit.
+    ///
+    /// # Unsafety
+    ///
+    /// `get_buf_bits` will not check the `offset`. Users should ensure to do this manually.
+    ///
+    /// # Panics
+    ///
+    /// This method should panic while required `length` is longer than the buf unit bits size.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// vec.resize(10, 0);
+    /// println!("{:?}", vec);
+    /// for i in 0..8 {
+    ///     vec.set_bit(i, if i % 2 == 0 { true } else { false });
+    /// }
+    /// println!("{:?}", vec);
+    /// unsafe {
+    ///     println!("Get buf bits at 0 with length 1");
+    ///     assert_eq!(vec.get_buf_bits(0, 1), 1);
+    ///     println!("Get buf bits at 1 with length 2");
+    ///     assert_eq!(vec.get_buf_bits(1, 2), 2);
+    ///     println!("Get buf bits at 3 with length 4");
+    ///     assert_eq!(vec.get_buf_bits(3, 4), 0b1010);
+    /// }
+    /// # }
+    /// ```
+    #[inline]
+    pub unsafe fn get_buf_bits(&self, offset: usize, length: usize) -> B {
+        let buf_unit = Self::buf_unit_bits();
+        if length > buf_unit {
+            panic!("get {} buf bits longer than buf unit bits {}",
+                   length,
+                   buf_unit);
+        }
+        match (Self::unit_bits(), Self::buf_unit_bits(), offset, length) {
+            (_, _, offset, 1) => {
+                self.get_buf_unit_bit(offset)
+            }
+            (unit, buf_unit, offset, length) if unit == buf_unit => {
+                // NOTE: maybe unreachable!() is better
+                self.get_buf_unit_bits(offset, length)
+            }
+            (unit, buf_unit, offset, length) if unit < buf_unit && buf_unit % unit == 0 => {
+                self.get_buf_unit_bits(offset, length)
+            }
+            (unit, buf_unit, offset, length) => {
+                (offset..cmp::min(offset + length, self.buf_bits()))
+                    .map(|x| self.get_buf_unit_bit(x))
+                    .fold(B::zero(), |v, x| v << 1 | x)
+            }
+        }
+    }
+
     /// Converts capacity to storage size
     #[inline]
     fn capacity_to_buf(capacity: usize) -> usize {
@@ -788,6 +825,7 @@ B:  PrimInt
         let bits_index = index * Self::unit_bits();
         (bits_index / elem_bits, bits_index % elem_bits)
     }
+
     /// Converts the vector index range to buf `(index, offset)` range tuple.
     #[inline]
     fn index_range_to_buf(start: usize, end: usize) -> ((usize, usize), (usize, usize)) {
@@ -800,11 +838,13 @@ B:  PrimInt
         let unit = Self::buf_unit_bits();
         (index / unit, index % unit)
     }
+
     /// Returns size of `B`.
     #[inline]
     fn buf_unit_bits() -> usize {
         mem::size_of::<B>() * 8
     }
+
     /// Returns unit of bits - that is `NbitsVec`'s `N`.
     #[inline]
     fn unit_bits() -> usize {

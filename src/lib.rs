@@ -28,7 +28,7 @@ mod tests {
                         use test::{self, Bencher};
                         #[bench]
                         fn get(b: &mut Bencher) {
-                            let n = test::black_box(1000);
+                            let n = test::black_box(100);
                             let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                             unsafe { vec.set_len(n) }
                             for i in 0..n {
