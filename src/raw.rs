@@ -290,12 +290,7 @@ B:  PrimInt
     {
         unimplemented!();
     }
-    pub fn push(&mut self, value: T) {
-        unimplemented!();
-    }
-    pub fn pop(&mut self) -> Option<T> {
-        unimplemented!();
-    }
+
     pub fn append(&mut self, other: &mut NbitsVec<T>) {
         unimplemented!();
     }
@@ -377,6 +372,54 @@ B:  PrimInt
         unimplemented!();
     }
 
+    /// Appends an element to the back of a collection.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of elements in the vector overflows a `usize`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// vec.push(0b10);
+    /// vec.push(0b01);
+    /// assert_eq!(vec.len(), 2);
+    /// # }
+    /// ```
+    pub fn push(&mut self, value: B) {
+        let len = self.len();
+        let new_len = len.checked_add(1).expect("usize added overflows");
+        self.reserve(1);
+        self.len = new_len;
+        self.set(len, value);
+    }
+
+    /// Removes the last element from a vector and returns it, or `None` if it is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// vec.push(0b11);
+    /// assert_eq!(vec.pop(), Some(0b11));
+    /// assert_eq!(vec.len(), 0);
+    /// # }
+    /// ```
+    pub fn pop(&mut self) -> Option<B> {
+        if self.len() == 0 {
+            return None;
+        }
+        let first = self.get(0);
+        self.align(1, 0);
+        Some(first)
+    }
 
     /// Resizes the Vec in-place so that len() is equal to new_len.
     ///
