@@ -212,10 +212,6 @@ B:  PrimInt
         unimplemented!();
     }
 
-    pub fn into_boxed_slice(self) -> Box<[T]> {
-        unimplemented!();
-    }
-
     /// Shorten a vector to be `len` elements long, dropping excess elements.
     ///
     /// If `len` is greater than the vector's current length, this has no effect.
@@ -246,6 +242,10 @@ B:  PrimInt
     pub fn as_mut_slice(&mut self) -> &mut [T] {
         unimplemented!();
     }
+    pub fn into_boxed_slice(self) -> Box<[T]> {
+        unimplemented!();
+    }
+
     /// Sets the length of a vector.
     ///
     /// This will explicitly set the size of the vector, without actually modifying its buffers or
@@ -276,22 +276,141 @@ B:  PrimInt
     pub unsafe fn set_len(&mut self, len: usize) {
         self.len = len;
     }
-    pub fn swap_remove(&mut self, index: usize) -> T {
-        unimplemented!();
+
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
+    /// v.push(0b01);
+    /// v.push(0b10);
+    /// assert_eq!(v.len(), 2);
+    /// v.insert(1, 0b11);
+    /// assert_eq!(v.get(1), 0b11);
+    /// assert_eq!(v.get(2), 0b10);
+    /// # }
+    pub fn insert(&mut self, index: usize, element: B) {
+        self.align(index, index + 1);
+        self.set(index, element);
     }
-    pub fn insert(&mut self, index: usize, element: T) {
-        unimplemented!();
+
+    /// Removes and returns the element at position `index` within the vector, shifting all elements
+    /// after position `index` one position to the left.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is out of bounds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
+    /// v.push(0b01);
+    /// v.push(0b10);
+    /// assert_eq!(v.remove(0), 0b01);
+    /// # }
+    /// ```
+    pub fn remove(&mut self, index: usize) -> B {
+        if index >= self.len {
+            panic!("index is out of bounds");
+        }
+        if self.is_empty() {
+            panic!("vector is empty");
+        }
+        if self.len() == 1 {
+            return self.pop().expect("swap removed with one element");
+        }
+        let removed = self.get(index);
+        self.align(index + 1, index);
+        removed
     }
-    pub fn remove(&mut self, index: usize) {
-        unimplemented!();
+
+    /// Removes an element from anywhere in the vector and return it, replacing it with the last
+    /// element.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `index` is out of bounds.
+    /// Panics if vector is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut v: NbitsVec<As2bits> = NbitsVec::new();
+    /// v.push(0b01);
+    /// v.push(0b10);
+    /// v.push(0b11);
+    /// assert_eq!(v.len(), 3);
+    /// println!("{:?}", v);
+    /// assert_eq!(v.swap_remove(0), 0b01);
+    /// println!("{:?}", v);
+    /// assert_eq!(v.len(), 2);
+    /// assert_eq!(v.get(0), 0b11);
+    /// assert_eq!(v.get(1), 0b10);
+    /// println!("{:?}", v);
+    /// assert_eq!(v.swap_remove(0), 0b11);
+    /// # }
+    /// ```
+    pub fn swap_remove(&mut self, index: usize) -> B {
+        if index >= self.len {
+            panic!("index is out of bounds");
+        }
+        if self.is_empty() {
+            panic!("vector is empty");
+        }
+        if self.len() == 1 {
+            return self.pop().expect("swap removed with one element");
+        }
+        let value = self.get(index);
+        let last = self.pop().expect("swap removed with last element");
+        self.set(index, last);
+        value
     }
+
+    /// Moves all the elements of `other` into `Self`, leaving `other` empty.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of elements in the vector overflows a `usize`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # extern crate bits_vec;
+    /// # use bits_vec::*;
+    /// # fn main() {
+    /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// let mut other: NbitsVec<As2bits> = NbitsVec::new();
+    /// other.resize(2, 0b10);
+    /// vec.append(&mut other);
+    /// assert_eq!(vec.len(), 2);
+    /// assert_eq!(other.len(), 0);
+    /// # assert_eq!(vec.get(0), 0b10);
+    /// # assert_eq!(vec.get(1), 0b10);
+    /// # }
+    /// ```
+    pub fn append(&mut self, other: &mut Self) {
+        let other_len = other.len();
+        self.reserve_exact(other_len);
+        for i in 0..other_len {
+            let v = other.get(i);
+            self.push(v);
+        }
+        unsafe { other.set_len(0) }
+    }
+
+    /// Unimplements
     pub fn retain<F>(&mut self, f: F)
         where F: FnMut(&T) -> bool
     {
-        unimplemented!();
-    }
-
-    pub fn append(&mut self, other: &mut NbitsVec<T>) {
         unimplemented!();
     }
 
@@ -407,18 +526,22 @@ B:  PrimInt
     /// # use bits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::new();
+    /// vec.push(0b10);
     /// vec.push(0b11);
     /// assert_eq!(vec.pop(), Some(0b11));
+    /// assert_eq!(vec.pop(), Some(0b10));
     /// assert_eq!(vec.len(), 0);
     /// # }
     /// ```
     pub fn pop(&mut self) -> Option<B> {
-        if self.len() == 0 {
+        let len = self.len();
+        if self.is_empty() {
             return None;
         }
-        let first = self.get(0);
-        self.align(1, 0);
-        Some(first)
+        let new_len = len - 1;
+        let last = self.get(new_len);
+        self.len = new_len;
+        Some(last)
     }
 
     /// Resizes the Vec in-place so that len() is equal to new_len.
@@ -628,6 +751,7 @@ B:  PrimInt
     /// let mut vec: NbitsVec<As2bits> = NbitsVec::with_capacity(10);
     /// unsafe { vec.set_len(2) }
     /// vec.set(0, 0b11);
+    /// assert_eq!(vec.get(0), 0b11);
     /// # }
     /// ```
     #[inline]
