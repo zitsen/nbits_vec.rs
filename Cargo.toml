@@ -7,7 +7,7 @@ authors = ["Huo Linhe <huolinhe@berrygenomics.com>"]
 num = "0.1.28"
 
 [dependencies.clippy]
-version = "0.0.26"
+version = "0.0.29"
 optional = true
 
 [features]
