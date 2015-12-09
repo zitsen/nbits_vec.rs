@@ -1,8 +1,8 @@
 use alloc::raw_vec::RawVec;
-use num::{self, PrimInt};
+use num::PrimInt;
 use std::cmp;
 use std::ops::*;
-use std::fmt::{self, Debug, Display};
+use std::fmt::{self, Debug};
 use std::mem;
 use std::ptr;
 use std::marker::PhantomData;
@@ -203,14 +203,6 @@ B:  PrimInt
         let fit_len = Self::capacity_to_buf(self.len());
         self.buf.shrink_to_fit(fit_len);
     }
-    /// Expands the length of the vector as much as possible with current capacity.
-    ///
-    /// Be sure not to use the method if the capacity is not setted by yourself - means you didn't
-    /// expect the capacity so as the length.
-    pub fn expand_to_fit(&mut self) {
-        let fit_len = Self::capacity_to_buf(self.len());
-        unimplemented!();
-    }
 
     /// Shorten a vector to be `len` elements long, dropping excess elements.
     ///
@@ -236,7 +228,7 @@ B:  PrimInt
             self.shrink_to_fit();
         }
     }
-    pub fn as_slice(&self) -> &[T] {
+    pub fn as_raw_slice(&self) -> &[B] {
         unimplemented!();
     }
     pub fn as_mut_slice(&mut self) -> &mut [T] {
@@ -485,11 +477,6 @@ B:  PrimInt
     pub fn push_all(&mut self, other: &[T]) {
         unimplemented!();
     }
-    // And any lost functions from `dedup` to the end.
-
-    pub fn get_mut(&self, index: usize) {
-        unimplemented!();
-    }
 
     /// Appends an element to the back of a collection.
     ///
@@ -706,7 +693,6 @@ B:  PrimInt
         }
         let buf_unit = Self::buf_unit_bits();
         if (length <= buf_unit / unit) || buf_unit % unit != 0 {
-            println!("length is short");
             for i in (index..).take(length) {
                 self.set_buf_bits(i * unit, unit, value);
             }
@@ -1081,3 +1067,4 @@ B:  PrimInt
         T::bits()
     }
 }
+
