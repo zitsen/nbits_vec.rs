@@ -4,7 +4,6 @@ extern crate raw_nbits_vec;
 extern crate test;
 extern crate num;
 
-#[cfg(test)]
 mod tests {
     macro_rules! bench_test {
         ($(($m: ident, $nbits: ident, $storage: ident)),*) => {
@@ -15,7 +14,7 @@ mod tests {
                         use test::{self, Bencher};
                         #[bench]
                         fn bench(b: &mut Bencher) {
-                            let n = test::black_box(1000);
+                            let n = test::black_box(100);
                             let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                             unsafe { vec.set_len(n) }
                             b.iter(|| {
@@ -33,9 +32,9 @@ mod tests {
                         use num::Zero;
                         #[bench]
                         fn bench(b: &mut Bencher) {
+                            let n = test::black_box(100);
+                            let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::new();
                             b.iter(|| {
-                                let n = test::black_box(1000);
-                                let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::new();
                                 for i in (0..n).step_by(10) {
                                     vec.resize(i, $storage::zero());
                                 }
@@ -50,7 +49,7 @@ mod tests {
                         use raw_nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
-                        fn set(b: &mut Bencher) {
+                        fn bench(b: &mut Bencher) {
                             b.iter(|| {
                                 let n = test::black_box(100);
                                 let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
@@ -62,6 +61,22 @@ mod tests {
                         }
                     }
                 )*
+            }
+            mod new {
+                $(
+                    mod $m {
+                        use raw_nbits_vec::*;
+                        use test::{self, Bencher};
+                        #[bench]
+                        fn bench(b: &mut Bencher) {
+                            b.iter(|| {
+                                let n = test::black_box(100);
+                                let vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
+                                vec
+                            });
+                        }
+                    }
+                 )*
             }
             mod push {
                 $(
@@ -81,25 +96,6 @@ mod tests {
                     }
                  )*
             }
-            /*
-            mod fill {
-                $(
-                    mod $m {
-                        use raw_nbits_vec::*;
-                        use test::{self, Bencher};
-                        #[bench]
-                        fn bench(b: &mut Bencher) {
-                            b.iter(|| {
-                                let n = test::black_box(100);
-                                let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
-                                unsafe { vec.set_len(n) };
-                                vec.fill_bits(0, n, false);
-                            });
-                        }
-                    }
-                )*
-            }
-            */
         }
     }
     bench_test! {
