@@ -1,3 +1,11 @@
+//! A crate aims to resolve small bits values storage and operations problem.
+//!
+//! Small bits values will be stored in a vector of `Block` - which is a `PrimInt` in
+//! memory. Here, we only consider the case that one `Block` will store some of the
+//! small bits values, such as 1, 2, 3, 4, 5 bits stored in `u8`, `u16`, `u32`, `u64`.
+//!
+//! In this crate, we use `RawVec` from unstable `alloc` crate as vector background.
+
 #![feature(alloc)]
 
 extern crate alloc;
