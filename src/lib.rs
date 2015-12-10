@@ -3,13 +3,9 @@
 extern crate alloc;
 extern crate num;
 
-mod types;
-pub use types::*;
-
 use alloc::raw_vec::RawVec;
 use num::PrimInt;
 use std::cmp;
-use std::ops::*;
 use std::fmt::{self, Debug};
 use std::mem;
 use std::ptr;
@@ -24,7 +20,29 @@ pub trait Nbits {
     }
 }
 
-pub struct NbitsVec<T: Nbits, B = usize> {
+macro_rules! nbits_set {
+    ($(($t: ident, $size: expr)),*) => (
+        $(
+            /// Struct for each NBits
+            pub struct $t;
+            impl Nbits for $t {
+                #[inline]
+                fn bits() -> usize {
+                    $size
+                }
+            }
+        )*
+    )
+}
+
+nbits_set! {
+    (As1bits, 1),
+    (As2bits, 2),
+    (As3bits, 3),
+    (As4bits, 4)
+}
+
+pub struct NbitsVec<T: Nbits, B: PrimInt = usize> {
     buf: RawVec<B>,
     len: usize,
     _marker: PhantomData<T>,
@@ -919,7 +937,7 @@ B:  PrimInt
         match (old == B::one(), bit) {
             (lhs, rhs) if lhs == rhs => (),
             (_, true) => ptr::write(ptr, cur | mask),
-            (_, false) => ptr::write(ptr, cur & mask.not()),
+            (_, false) => ptr::write(ptr, cur & !mask),
         }
     }
 
@@ -1075,4 +1093,3 @@ B:  PrimInt
         T::bits()
     }
 }
-
