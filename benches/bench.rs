@@ -1,6 +1,6 @@
 #![feature(test)]
 #![feature(step_by)]
-extern crate bits_vec;
+extern crate raw_nbits_vec;
 extern crate test;
 extern crate num;
 
@@ -11,7 +11,7 @@ mod tests {
             mod get {
                 $(
                     mod $m {
-                        use bits_vec::*;
+                        use raw_nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn bench(b: &mut Bencher) {
@@ -28,7 +28,7 @@ mod tests {
             mod resize {
                 $(
                     mod $m {
-                        use bits_vec::*;
+                        use raw_nbits_vec::*;
                         use test::{self, Bencher};
                         use num::Zero;
                         #[bench]
@@ -47,7 +47,7 @@ mod tests {
             mod set {
                 $(
                     mod $m {
-                        use bits_vec::*;
+                        use raw_nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn set(b: &mut Bencher) {
@@ -66,7 +66,7 @@ mod tests {
             mod push {
                 $(
                     mod $m {
-                        use bits_vec::*;
+                        use raw_nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn set(b: &mut Bencher) {
@@ -85,7 +85,7 @@ mod tests {
             mod fill {
                 $(
                     mod $m {
-                        use bits_vec::*;
+                        use raw_nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn bench(b: &mut Bencher) {

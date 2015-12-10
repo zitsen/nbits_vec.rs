@@ -1,4 +1,4 @@
-use raw::Nbits;
+use super::Nbits;
 
 #[macro_export]
 macro_rules! nbits_set {
