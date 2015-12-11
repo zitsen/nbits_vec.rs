@@ -84,10 +84,10 @@ mod tests {
                         use raw_nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
-                        fn set(b: &mut Bencher) {
+                        fn push(b: &mut Bencher) {
+                            let n = test::black_box(100);
+                            let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
                             b.iter(|| {
-                                let n = test::black_box(100);
-                                let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
                                 for i in 0..n {
                                     vec.push(i)
                                 }
