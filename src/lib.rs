@@ -17,6 +17,7 @@ use std::cmp;
 use std::fmt::{self, Debug};
 use std::mem;
 use std::ptr;
+use std::slice;
 use std::marker::PhantomData;
 
 pub trait Nbits {
@@ -263,13 +264,26 @@ B:  PrimInt
         }
     }
     pub fn as_raw_slice(&self) -> &[B] {
-        unimplemented!();
+        unsafe {
+            let p = self.buf.ptr();
+            debug_assert!(!p.is_null());
+            slice::from_raw_parts(p, self.buf.cap())
+        }
     }
-    pub fn as_mut_slice(&mut self) -> &mut [T] {
-        unimplemented!();
+    pub fn as_mut_raw_slice(&mut self) -> &mut [B] {
+        unsafe {
+            let p = self.buf.ptr();
+            debug_assert!(!p.is_null());
+            slice::from_raw_parts_mut(p, self.buf.cap())
+        }
     }
-    pub fn into_boxed_slice(self) -> Box<[T]> {
-        unimplemented!();
+    pub fn into_raw_boxed_slice(mut self) -> Box<[B]> {
+        unsafe {
+            self.shrink_to_fit();
+            let buf = ptr::read(&self.buf);
+            mem::forget(self);
+            buf.into_box()
+        }
     }
 
     /// Sets the length of a vector.
@@ -433,13 +447,6 @@ B:  PrimInt
         unsafe { other.set_len(0) }
     }
 
-    /// Unimplements
-    pub fn retain<F>(&mut self, f: F)
-        where F: FnMut(&T) -> bool
-    {
-        unimplemented!();
-    }
-
     #[inline]
     pub fn clear(&mut self) {
         self.len = 0;
@@ -502,14 +509,6 @@ B:  PrimInt
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    pub fn split_off(&mut self, at: usize) -> Self {
-        unimplemented!();
-    }
-
-    pub fn push_all(&mut self, other: &[T]) {
-        unimplemented!();
     }
 
     /// Appends an element to the back of a collection.
@@ -909,12 +908,6 @@ B:  PrimInt
                 }
             }
         }
-    }
-
-    /// Mask buf element of `index` at offset `(from, to)` as zero.
-    #[inline]
-    unsafe fn zero_buf_unit_bits(&mut self, offset: usize, length: usize) {
-        self.set_buf_unit_bits(offset, length, B::zero());
     }
 
     /// Set buf element of `index` at offset `from` to `to` as `value`.
