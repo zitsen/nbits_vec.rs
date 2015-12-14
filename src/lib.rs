@@ -14,7 +14,9 @@ extern crate num;
 use alloc::raw_vec::RawVec;
 use num::PrimInt;
 use std::cmp;
+use std::ops;
 use std::fmt::{self, Debug};
+use std::hash::{self, Hash};
 use std::mem;
 use std::ptr;
 use std::slice;
@@ -532,7 +534,9 @@ B:  PrimInt
     pub fn push(&mut self, value: B) {
         let len = self.len();
         let new_len = len.checked_add(1).expect("usize added overflows");
-        self.reserve(1);
+        if self.capacity() < new_len {
+            self.reserve(1);
+        }
         self.len = new_len;
         self.set(len, value);
     }
@@ -1044,13 +1048,22 @@ B:  PrimInt
         let unit = Self::buf_unit_bits();
         (ptr::read(ptr) << (unit - offset.1 - length)) >> (unit - length)
     }
+
+    #[inline]
+    pub fn used_buf_cap(&self) -> usize {
+        let (index, offset) = Self::bit_index_to_buf(self.bits());
+        if offset == 0 {
+            index
+        } else {
+            index + 1
+        }
+    }
     /// Converts capacity to storage size
     #[inline]
     fn capacity_to_buf(capacity: usize) -> usize {
-        if capacity == 0 {
-            0
-        } else {
-            (capacity * Self::unit_bits() - 1) / (Self::buf_unit_bits()) + 1
+        match Self::index_to_buf(capacity) {
+            (index, 0) => index,
+            (index, _) => index + 1,
         }
     }
 
@@ -1084,7 +1097,7 @@ B:  PrimInt
 
     /// Returns size of `B`.
     #[inline]
-    fn buf_unit_bits() -> usize {
+    pub fn buf_unit_bits() -> usize {
         mem::size_of::<B>() * 8
     }
 
@@ -1092,5 +1105,75 @@ B:  PrimInt
     #[inline]
     fn unit_bits() -> usize {
         T::bits()
+    }
+
+    pub fn buf_cap(&self) -> usize {
+        self.buf.cap()
+    }
+}
+
+#[test]
+fn test_unit_bits() {
+    type _2bitsVec_u8 = NbitsVec<As2bits, u8>;
+    assert_eq!(_2bitsVec_u8::unit_bits(), 2);
+    assert_eq!(_2bitsVec_u8::capacity_to_buf(36), 9);
+    let mut vec = _2bitsVec_u8::with_capacity(36);
+    assert_eq!(vec.buf.cap(), 9);
+    vec.push(0);
+    assert_eq!(vec.buf.cap(), 9);
+}
+impl<T: Nbits, B: PrimInt> ops::Deref for NbitsVec<T, B> {
+    type Target = [B];
+
+    fn deref(&self) -> &[B] {
+        self.as_raw_slice()
+    }
+}
+impl<T: Nbits, B: PrimInt> ops::DerefMut for NbitsVec<T, B> {
+    fn deref_mut(&mut self) -> &mut [B] {
+        self.as_mut_raw_slice()
+    }
+}
+
+impl<T: Nbits, B: PrimInt + Hash> Hash for NbitsVec<T, B> {
+    #[inline]
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        Hash::hash(&**self, state);
+    }
+}
+
+impl<T: Nbits, B: PrimInt> PartialEq for NbitsVec<T, B> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.len() == other.len() && self[..] == other[..]
+    }
+    #[inline]
+    fn ne(&self, other: &Self) -> bool {
+        self.len() != other.len() || self[..] != other[..]
+    }
+}
+
+impl<T: Nbits, B: PrimInt> Eq for NbitsVec<T, B> { }
+
+impl<T: Nbits, B: PrimInt> Clone for NbitsVec<T, B> {
+    fn clone(&self) -> Self {
+        let mut new = Self::with_capacity(self.len());
+        unsafe {
+            ptr::copy_nonoverlapping(self.buf.ptr(), new.buf.ptr(), self.used_buf_cap());
+            new.set_len(self.len());
+        }
+        new
+    }
+}
+
+impl<T: Nbits, B: PrimInt> PartialOrd for NbitsVec<T, B> {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        PartialOrd::partial_cmp(&**self, &**other)
+    }
+}
+
+impl<T: Nbits, B: PrimInt> Ord for NbitsVec<T, B> {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        Ord::cmp(&**self, &**other)
     }
 }
