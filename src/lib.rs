@@ -4,8 +4,12 @@
 //! memory. Here, we only consider the case that one `Block` will store some of the
 //! small bits values, such as 1, 2, 3, 4, 5 bits stored in `u8`, `u16`, `u32`, `u64`.
 //!
-//! In this crate, we use `RawVec` from unstable `alloc` crate as vector background.
-
+//! **WARN**: In this crate, I(zitsen) decided to use `RawVec` from unstable `alloc`
+//! crate as vector background,
+//! which means the API would only be avaliable in `nightly` version of Rust and that
+//! the API might be changed in some time the `alloc` API changed.
+//! So a `stable` version may never give out.
+//!
 #![feature(alloc)]
 
 extern crate alloc;
