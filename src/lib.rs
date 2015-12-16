@@ -62,16 +62,37 @@ nbits_set! {
     (As4bits, 4)
 }
 
+/// Implement vector contains small `N`-bits values using `Block` as unit
+/// buffer.
+///
+/// The `N` is an `Nbits` type. The `Block` is a `PrimInt` - primitive
+/// iterger type - which size should be greater than `N` bits.
+///
+/// # Examples
+///
+/// ```rust
+/// extern crate raw_nbits_vec as nbits_vec;
+/// use nbits_vec::{NbitsVec, As2bits};
+/// fn main() {
+///     let mut n2bits_vec: NbitsVec<As2bits, usize> = NbitsVec::new();
+///     n2bits_vec.push(0b11);
+///     n2bits_vec.push(0b10);
+///     assert_eq!(n2bits_vec.pop(), Some(0b10));
+///     assert_eq!(n2bits_vec.pop(), Some(0b11));
+///     n2bits_vec.resize(10, 0b01);
+///     assert_eq!(n2bits_vec.len(), 10);
+///     assert_eq!(n2bits_vec.get(3), 0b01);
+///     n2bits_vec.set(7, 0b10);
+///     assert_eq!(n2bits_vec.get(7), 0b10);
+/// }
+/// ```
 pub struct NbitsVec<N: Nbits, Block: PrimInt = usize> {
     buf: RawVec<Block>,
     len: usize,
     _marker: PhantomData<N>,
 }
 
-impl<
-N:  Nbits,
-Block:  PrimInt,
-> Default for NbitsVec<N, Block> {
+impl<N: Nbits, Block: PrimInt> Default for NbitsVec<N, Block> {
     fn default() -> Self {
         NbitsVec {
             buf: RawVec::new(),
@@ -98,10 +119,7 @@ impl<N: Nbits, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
     }
 }
 
-impl<
-N:  Nbits,
-Block:  PrimInt
-> NbitsVec<N, Block> {
+impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     /// Constructs a new, empty NbitsVec<N>
     ///
     /// The vector will not allocate until elements are pushed onto it.
@@ -1121,15 +1139,20 @@ Block:  PrimInt
     }
 }
 
-#[test]
-fn test_unit_bits() {
-    type _2bitsVec_u8 = NbitsVec<As2bits, u8>;
-    assert_eq!(_2bitsVec_u8::unit_bits(), 2);
-    assert_eq!(_2bitsVec_u8::capacity_to_buf(36), 9);
-    let mut vec = _2bitsVec_u8::with_capacity(36);
-    assert_eq!(vec.buf.cap(), 9);
-    vec.push(0);
-    assert_eq!(vec.buf.cap(), 9);
+#[cfg(test)]
+mod tests {
+    use super::{As2bits, NbitsVec};
+
+    #[test]
+    fn test_unit_bits() {
+        type NV = NbitsVec<As2bits, u8>;
+        assert_eq!(NV::unit_bits(), 2);
+        assert_eq!(NV::capacity_to_buf(36), 9);
+        let mut vec = NV::with_capacity(36);
+        assert_eq!(vec.buf.cap(), 9);
+        vec.push(0);
+        assert_eq!(vec.buf.cap(), 9);
+    }
 }
 impl<N: Nbits, Block: PrimInt> ops::Deref for NbitsVec<N, Block> {
     type Target = [Block];
@@ -1162,7 +1185,7 @@ impl<N: Nbits, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Nbits, Block: PrimInt> Eq for NbitsVec<N, Block> { }
+impl<N: Nbits, Block: PrimInt> Eq for NbitsVec<N, Block> {}
 
 impl<N: Nbits, Block: PrimInt> Clone for NbitsVec<N, Block> {
     fn clone(&self) -> Self {
