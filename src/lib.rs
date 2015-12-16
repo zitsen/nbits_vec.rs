@@ -296,14 +296,14 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
-            slice::from_raw_parts(p, self.buf.cap())
+            slice::from_raw_parts(p, self.used_buf_cap())
         }
     }
     pub fn as_mut_raw_slice(&mut self) -> &mut [Block] {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
-            slice::from_raw_parts_mut(p, self.buf.cap())
+            slice::from_raw_parts_mut(p, self.used_buf_cap())
         }
     }
     pub fn into_raw_boxed_slice(mut self) -> Box<[Block]> {
