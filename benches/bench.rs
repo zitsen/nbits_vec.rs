@@ -14,7 +14,7 @@ mod tests {
                         use test::{self, Bencher};
                         #[bench]
                         fn bench(b: &mut Bencher) {
-                            let n = test::black_box(100);
+                            let n = test::black_box(1000);
                             let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                             unsafe { vec.set_len(n) }
                             b.iter(|| {
@@ -32,7 +32,7 @@ mod tests {
                         use num::Zero;
                         #[bench]
                         fn bench(b: &mut Bencher) {
-                            let n = test::black_box(100);
+                            let n = test::black_box(1000);
                             let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::new();
                             b.iter(|| {
                                 for i in (0..n).step_by(10) {
@@ -51,11 +51,11 @@ mod tests {
                         #[bench]
                         fn bench(b: &mut Bencher) {
                             b.iter(|| {
-                                let n = test::black_box(100);
+                                let n = test::black_box(1000);
                                 let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                                 unsafe { vec.set_len(n) };
                                 for i in 0..n {
-                                    vec.set(i, ::num::cast(i).unwrap());
+                                    vec.set(i, 0b1010);
                                 }
                             });
                         }
@@ -70,7 +70,7 @@ mod tests {
                         #[bench]
                         fn bench(b: &mut Bencher) {
                             b.iter(|| {
-                                let n = test::black_box(100);
+                                let n = test::black_box(1000);
                                 let vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                                 vec
                             });
@@ -85,11 +85,11 @@ mod tests {
                         use test::{self, Bencher};
                         #[bench]
                         fn push(b: &mut Bencher) {
-                            let n = test::black_box(100);
+                            let n = test::black_box(1000);
                             let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                             b.iter(|| {
                                 for i in 0..n {
-                                    vec.push(::num::cast(i).unwrap())
+                                    vec.push(1);
                                 }
                             });
                         }
