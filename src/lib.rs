@@ -3,7 +3,7 @@
 //! [![Build Status](https://travis-ci.org/zitsen/raw_nbits_vec.rs.svg?branch=master)]
 //! (https://travis-ci.org/zitsen/rawn_nbits_vec.rs)
 //!
-//! [Documentation](http://zisten.github.io/raw_nbits_vec.rs/raw_nbits_vec/index.html)
+//! [Documentation](http://zitsen.github.io/raw_nbits_vec.rs)
 //!
 //! Small bits values will be stored in a vector of `Block` - which is a `PrimInt` in
 //! memory. Here, we only consider the case that one `Block` will store some of the
