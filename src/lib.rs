@@ -62,16 +62,16 @@ nbits_set! {
     (As4bits, 4)
 }
 
-pub struct NbitsVec<T: Nbits, B: PrimInt = usize> {
-    buf: RawVec<B>,
+pub struct NbitsVec<N: Nbits, Block: PrimInt = usize> {
+    buf: RawVec<Block>,
     len: usize,
-    _marker: PhantomData<T>,
+    _marker: PhantomData<N>,
 }
 
 impl<
-T:  Nbits,
-B:  PrimInt,
-> Default for NbitsVec<T, B> {
+N:  Nbits,
+Block:  PrimInt,
+> Default for NbitsVec<N, Block> {
     fn default() -> Self {
         NbitsVec {
             buf: RawVec::new(),
@@ -81,11 +81,11 @@ B:  PrimInt,
     }
 }
 
-impl<T: Nbits, B: PrimInt + fmt::LowerHex> Debug for NbitsVec<T, B> {
+impl<N: Nbits, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f,
                     "NbitsVec<{}> {{ len: {}, buf: RawVec {{ cap: {}, [",
-                    T::bits(),
+                    N::bits(),
                     self.len,
                     self.buf.cap()));
         let ptr = self.buf.ptr();
@@ -99,10 +99,10 @@ impl<T: Nbits, B: PrimInt + fmt::LowerHex> Debug for NbitsVec<T, B> {
 }
 
 impl<
-T:  Nbits,
-B:  PrimInt
-> NbitsVec<T, B> {
-    /// Constructs a new, empty NbitsVec<T>
+N:  Nbits,
+Block:  PrimInt
+> NbitsVec<N, Block> {
+    /// Constructs a new, empty NbitsVec<N>
     ///
     /// The vector will not allocate until elements are pushed onto it.
     ///
@@ -122,7 +122,7 @@ B:  PrimInt
             _marker: PhantomData,
         }
     }
-    /// Constructs a new, empty Vec<T> with the specified capacity.
+    /// Constructs a new, empty Vec<N> with the specified capacity.
     ///
     /// The vector will be able to hold exactly capacity elements without reallocating. If capacity
     /// is 0, the vector will not allocate.
@@ -147,7 +147,7 @@ B:  PrimInt
         }
     }
 
-    pub unsafe fn from_raw_parts(ptr: *mut B, length: usize, capacity: usize) -> Self {
+    pub unsafe fn from_raw_parts(ptr: *mut Block, length: usize, capacity: usize) -> Self {
         NbitsVec {
             buf: RawVec::from_raw_parts(ptr, Self::capacity_to_buf(capacity)),
             len: length,
@@ -173,7 +173,7 @@ B:  PrimInt
     }
 
     /// Reserves capacity for at least additional more elements to be inserted in the given
-    /// NbitsVec<T>.
+    /// NbitsVec<N>.
     /// The collection may reserve more space to avoid frequent reallocations.
     ///
     /// # Panics
@@ -200,7 +200,7 @@ B:  PrimInt
     }
 
     /// Reserves the minimum capacity for exactly additional more elements to be inserted in the
-    /// given `NbitsVec<T>`. Does nothing if the capacity is already sufficient.
+    /// given `NbitsVec<N>`. Does nothing if the capacity is already sufficient.
     ///
     /// # Panics
     ///
@@ -274,21 +274,21 @@ B:  PrimInt
             self.shrink_to_fit();
         }
     }
-    pub fn as_raw_slice(&self) -> &[B] {
+    pub fn as_raw_slice(&self) -> &[Block] {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
             slice::from_raw_parts(p, self.buf.cap())
         }
     }
-    pub fn as_mut_raw_slice(&mut self) -> &mut [B] {
+    pub fn as_mut_raw_slice(&mut self) -> &mut [Block] {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
             slice::from_raw_parts_mut(p, self.buf.cap())
         }
     }
-    pub fn into_raw_boxed_slice(mut self) -> Box<[B]> {
+    pub fn into_raw_boxed_slice(mut self) -> Box<[Block]> {
         unsafe {
             self.shrink_to_fit();
             let buf = ptr::read(&self.buf);
@@ -342,7 +342,7 @@ B:  PrimInt
     /// assert_eq!(v.get(1), 0b11);
     /// assert_eq!(v.get(2), 0b10);
     /// # }
-    pub fn insert(&mut self, index: usize, element: B) {
+    pub fn insert(&mut self, index: usize, element: Block) {
         self.align(index, index + 1);
         self.set(index, element);
     }
@@ -366,7 +366,7 @@ B:  PrimInt
     /// assert_eq!(v.remove(0), 0b01);
     /// # }
     /// ```
-    pub fn remove(&mut self, index: usize) -> B {
+    pub fn remove(&mut self, index: usize) -> Block {
         if index >= self.len {
             panic!("index is out of bounds");
         }
@@ -410,7 +410,7 @@ B:  PrimInt
     /// assert_eq!(v.swap_remove(0), 0b11);
     /// # }
     /// ```
-    pub fn swap_remove(&mut self, index: usize) -> B {
+    pub fn swap_remove(&mut self, index: usize) -> Block {
         if index >= self.len {
             panic!("index is out of bounds");
         }
@@ -540,7 +540,7 @@ B:  PrimInt
     /// assert_eq!(vec.len(), 2);
     /// # }
     /// ```
-    pub fn push(&mut self, value: B) {
+    pub fn push(&mut self, value: Block) {
         let len = self.len();
         let new_len = len.checked_add(1).expect("usize added overflows");
         if self.capacity() < new_len {
@@ -566,7 +566,7 @@ B:  PrimInt
     /// assert_eq!(vec.len(), 0);
     /// # }
     /// ```
-    pub fn pop(&mut self) -> Option<B> {
+    pub fn pop(&mut self) -> Option<Block> {
         let len = self.len();
         if self.is_empty() {
             return None;
@@ -596,7 +596,7 @@ B:  PrimInt
     /// # }
     /// ```
     #[inline]
-    pub fn resize(&mut self, new_len: usize, value: B) {
+    pub fn resize(&mut self, new_len: usize, value: Block) {
         let len = self.len();
         if len < new_len {
             let n = new_len - len;
@@ -653,7 +653,7 @@ B:  PrimInt
         if offset > to {
             // Reduce `interval` length.
             let interval = offset - to;
-            // e.g. N = 2, B = u8, interval = 4
+            // e.g. N = 2, Block = u8, interval = 4
             if buf_unit % unit == 0 && interval % unit_cap == 0 {
                 // Copy previous offset * unit % buf_unit values.
                 let extra = offset % unit_cap;
@@ -688,7 +688,7 @@ B:  PrimInt
                     let dst = to / unit_cap;
                     let count = len / unit_cap - src + 1;
                     ptr::copy(ptr.offset(src as isize), ptr.offset(dst as isize), count);
-                    self.fill_buf(offset, interval, B::zero());
+                    self.fill_buf(offset, interval, Block::zero());
                     self.len = self.len() + interval;
                 }
             } else {
@@ -698,7 +698,7 @@ B:  PrimInt
                     self.set(offset + interval, value);
                 }
                 unsafe {
-                    self.fill_buf(offset, interval, B::zero());
+                    self.fill_buf(offset, interval, Block::zero());
                 }
             }
         }
@@ -732,7 +732,7 @@ B:  PrimInt
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn fill_buf(&mut self, index: usize, length: usize, value: B) {
+    pub unsafe fn fill_buf(&mut self, index: usize, length: usize, value: Block) {
         let unit = Self::unit_bits();
         if length == 1 {
             return self.set_buf_bits(index * unit, unit, value);
@@ -745,7 +745,7 @@ B:  PrimInt
         }
 
         let mul = buf_unit / unit;
-        let item = (0..mul).fold(B::zero(), |v, _x| v << unit | value);
+        let item = (0..mul).fold(Block::zero(), |v, _x| v << unit | value);
         let ptr = self.buf.ptr();
         let write_buf = |start: usize, end: usize| {
             (start..end).fold(ptr.offset(start as isize), |ptr, _x| {
@@ -787,7 +787,7 @@ B:  PrimInt
     /// # }
     /// ```
     #[inline]
-    pub fn set(&mut self, index: usize, value: B) {
+    pub fn set(&mut self, index: usize, value: Block) {
         if index >= self.len {
             panic!("attempt to set at {} but only {}", index, self.len);
         }
@@ -856,7 +856,7 @@ B:  PrimInt
         if at >= bits {
             return None;
         } else {
-            unsafe { Some(self.get_buf_unit_bit(at) == B::one()) }
+            unsafe { Some(self.get_buf_unit_bit(at) == Block::one()) }
         }
     }
 
@@ -895,7 +895,7 @@ B:  PrimInt
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn set_buf_bits(&mut self, offset: usize, length: usize, value: B) {
+    pub unsafe fn set_buf_bits(&mut self, offset: usize, length: usize, value: Block) {
         let buf_unit = Self::buf_unit_bits();
         if length > buf_unit {
             panic!("set {} buf bits longer than buf unit bits {}",
@@ -903,7 +903,7 @@ B:  PrimInt
                    buf_unit);
         }
         if length == 1 {
-            return self.set_buf_unit_bit(offset, value & B::one() == B::one());
+            return self.set_buf_unit_bit(offset, value & Block::one() == Block::one());
         }
         match Self::unit_bits() {
             unit if unit == buf_unit => {
@@ -916,7 +916,7 @@ B:  PrimInt
             _ => {
                 let mut v = value;
                 for x in offset..cmp::min(offset + length, self.buf_bits()) {
-                    self.set_buf_unit_bit(x, v & B::one() == B::one());
+                    self.set_buf_unit_bit(x, v & Block::one() == Block::one());
                     v = v >> 1;
                 }
             }
@@ -925,11 +925,11 @@ B:  PrimInt
 
     /// Set buf element of `index` at offset `from` to `to` as `value`.
     #[inline]
-    unsafe fn set_buf_unit_bits(&mut self, offset: usize, length: usize, value: B) {
+    unsafe fn set_buf_unit_bits(&mut self, offset: usize, length: usize, value: Block) {
         let (index, offset) = Self::bit_index_to_buf(offset);
         let mask = (offset..)
                        .take(length)
-                       .fold(B::zero(), |mask, _x| mask << 1 | B::one()) <<
+                       .fold(Block::zero(), |mask, _x| mask << 1 | Block::one()) <<
                    offset;
         let ptr = self.buf.ptr().offset(index as isize);
         let cur = ptr::read(ptr);
@@ -944,11 +944,11 @@ B:  PrimInt
     #[inline]
     unsafe fn set_buf_unit_bit(&mut self, offset: usize, bit: bool) {
         let (index, offset) = Self::bit_index_to_buf(offset);
-        let mask = B::one() << offset;
+        let mask = Block::one() << offset;
         let ptr = self.buf.ptr().offset(index as isize);
         let cur = ptr::read(ptr);
-        let old = cur >> offset & B::one();
-        match (old == B::one(), bit) {
+        let old = cur >> offset & Block::one();
+        match (old == Block::one(), bit) {
             (lhs, rhs) if lhs == rhs => (),
             (_, true) => ptr::write(ptr, cur | mask),
             (_, false) => ptr::write(ptr, cur & !mask),
@@ -973,7 +973,7 @@ B:  PrimInt
     /// assert_eq!(vec.get(0), 0b11);
     /// # }
     /// ```
-    pub fn get(&self, index: usize) -> B {
+    pub fn get(&self, index: usize) -> Block {
         if index >= self.len {
             panic!("attempt to get at {} but only {}", index, self.len);
         }
@@ -1015,7 +1015,7 @@ B:  PrimInt
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn get_buf_bits(&self, offset: usize, length: usize) -> B {
+    pub unsafe fn get_buf_bits(&self, offset: usize, length: usize) -> Block {
         let buf_unit = Self::buf_unit_bits();
         if length > buf_unit {
             panic!("get {} buf bits longer than buf unit bits {}",
@@ -1036,22 +1036,22 @@ B:  PrimInt
             (_, _) => {
                 (offset..cmp::min(offset + length, self.buf_bits()))
                     .map(|x| self.get_buf_unit_bit(x))
-                    .fold(B::zero(), |v, x| v << 1 | x)
+                    .fold(Block::zero(), |v, x| v << 1 | x)
             }
         }
     }
 
     /// Get buf unit bit at `index`th unit of `offset`bit.
     #[inline]
-    unsafe fn get_buf_unit_bit(&self, offset: usize) -> B {
+    unsafe fn get_buf_unit_bit(&self, offset: usize) -> Block {
         let (index, offset) = Self::bit_index_to_buf(offset);
         let ptr = self.buf.ptr().offset(index as isize);
-        ptr::read(ptr) >> offset & B::one()
+        ptr::read(ptr) >> offset & Block::one()
     }
 
     /// Get buf `length` bits of unit at `index`th unit's `offset`th bit
     #[inline]
-    unsafe fn get_buf_unit_bits(&self, offset: usize, length: usize) -> B {
+    unsafe fn get_buf_unit_bits(&self, offset: usize, length: usize) -> Block {
         let offset = Self::bit_index_to_buf(offset);
         let ptr = self.buf.ptr().offset(offset.0 as isize);
         let unit = Self::buf_unit_bits();
@@ -1107,13 +1107,13 @@ B:  PrimInt
     /// Returns size of `B`.
     #[inline]
     pub fn buf_unit_bits() -> usize {
-        mem::size_of::<B>() * 8
+        mem::size_of::<Block>() * 8
     }
 
     /// Returns unit of bits - that is `NbitsVec`'s `N`.
     #[inline]
     fn unit_bits() -> usize {
-        T::bits()
+        N::bits()
     }
 
     pub fn buf_cap(&self) -> usize {
@@ -1131,27 +1131,27 @@ fn test_unit_bits() {
     vec.push(0);
     assert_eq!(vec.buf.cap(), 9);
 }
-impl<T: Nbits, B: PrimInt> ops::Deref for NbitsVec<T, B> {
-    type Target = [B];
+impl<N: Nbits, Block: PrimInt> ops::Deref for NbitsVec<N, Block> {
+    type Target = [Block];
 
-    fn deref(&self) -> &[B] {
+    fn deref(&self) -> &[Block] {
         self.as_raw_slice()
     }
 }
-impl<T: Nbits, B: PrimInt> ops::DerefMut for NbitsVec<T, B> {
-    fn deref_mut(&mut self) -> &mut [B] {
+impl<N: Nbits, Block: PrimInt> ops::DerefMut for NbitsVec<N, Block> {
+    fn deref_mut(&mut self) -> &mut [Block] {
         self.as_mut_raw_slice()
     }
 }
 
-impl<T: Nbits, B: PrimInt + Hash> Hash for NbitsVec<T, B> {
+impl<N: Nbits, Block: PrimInt + Hash> Hash for NbitsVec<N, Block> {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         Hash::hash(&**self, state);
     }
 }
 
-impl<T: Nbits, B: PrimInt> PartialEq for NbitsVec<T, B> {
+impl<N: Nbits, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.len() == other.len() && self[..] == other[..]
@@ -1162,9 +1162,9 @@ impl<T: Nbits, B: PrimInt> PartialEq for NbitsVec<T, B> {
     }
 }
 
-impl<T: Nbits, B: PrimInt> Eq for NbitsVec<T, B> { }
+impl<N: Nbits, Block: PrimInt> Eq for NbitsVec<N, Block> { }
 
-impl<T: Nbits, B: PrimInt> Clone for NbitsVec<T, B> {
+impl<N: Nbits, Block: PrimInt> Clone for NbitsVec<N, Block> {
     fn clone(&self) -> Self {
         let mut new = Self::with_capacity(self.len());
         unsafe {
@@ -1175,13 +1175,13 @@ impl<T: Nbits, B: PrimInt> Clone for NbitsVec<T, B> {
     }
 }
 
-impl<T: Nbits, B: PrimInt> PartialOrd for NbitsVec<T, B> {
+impl<N: Nbits, Block: PrimInt> PartialOrd for NbitsVec<N, Block> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         PartialOrd::partial_cmp(&**self, &**other)
     }
 }
 
-impl<T: Nbits, B: PrimInt> Ord for NbitsVec<T, B> {
+impl<N: Nbits, Block: PrimInt> Ord for NbitsVec<N, Block> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         Ord::cmp(&**self, &**other)
     }
