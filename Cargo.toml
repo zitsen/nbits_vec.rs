@@ -2,6 +2,15 @@
 name = "raw_nbits_vec"
 version = "0.1.0"
 authors = ["Huo Linhe <huolinhe@berrygenomics.com>"]
+license = "MIT"
+readme  = "README.md"
+homepage = "https://github.com/zitsen/raw_nbits_vec.rs"
+repository = "https://github.com/zitsen/raw_nbits_vec.rs.git"
+documentation = "http://zitsen.github.io/raw_nbits_vec.rs/libr/index.html"
+description = """
+Small bits value (e.g. 1,2.. bits) vector implementation.
+"""
+keywords = ["nbits", "bits-vec", "small bits", "vec", "vector"]
 
 [dependencies]
 num = "0.1.28"
