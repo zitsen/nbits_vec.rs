@@ -52,10 +52,10 @@ mod tests {
                         fn bench(b: &mut Bencher) {
                             b.iter(|| {
                                 let n = test::black_box(100);
-                                let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
+                                let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                                 unsafe { vec.set_len(n) };
                                 for i in 0..n {
-                                    vec.set(i, i);
+                                    vec.set(i, ::num::cast(i).unwrap());
                                 }
                             });
                         }
@@ -71,7 +71,7 @@ mod tests {
                         fn bench(b: &mut Bencher) {
                             b.iter(|| {
                                 let n = test::black_box(100);
-                                let vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
+                                let vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                                 vec
                             });
                         }
@@ -86,10 +86,10 @@ mod tests {
                         #[bench]
                         fn push(b: &mut Bencher) {
                             let n = test::black_box(100);
-                            let mut vec: NbitsVec<As1bits> = NbitsVec::with_capacity(n);
+                            let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                             b.iter(|| {
                                 for i in 0..n {
-                                    vec.push(i)
+                                    vec.push(::num::cast(i).unwrap())
                                 }
                             });
                         }
@@ -99,25 +99,25 @@ mod tests {
         }
     }
     bench_test! {
-        (test_4bits_usize, As4bits, usize),
-        (test_4bits_u64, As4bits, u64),
-        (test_4bits_u32, As4bits, u32),
-        (test_4bits_u16, As4bits, u16),
-        (test_4bits_u8, As4bits, u8),
-        (test_3bits_usize, As3bits, usize),
-        (test_3bits_u64, As3bits, u64),
-        (test_3bits_u32, As3bits, u32),
-        (test_3bits_u16, As3bits, u16),
-        (test_3bits_u8, As3bits, u8),
-        (test_2bits_usize, As2bits, usize),
-        (test_2bits_u64, As2bits, u64),
-        (test_2bits_u32, As2bits, u32),
-        (test_2bits_u16, As2bits, u16),
-        (test_2bits_u8, As2bits, u8),
-        (test_1bits_usize, As1bits, usize),
-        (test_1bits_u64, As1bits, u64),
-        (test_1bits_u32, As1bits, u32),
-        (test_1bits_u16, As1bits, u16),
-        (test_1bits_u8, As1bits, u8)
+        (test_4bits_usize, N4, usize),
+        (test_4bits_u64, N4, u64),
+        (test_4bits_u32, N4, u32),
+        (test_4bits_u16, N4, u16),
+        (test_4bits_u8, N4, u8),
+        (test_3bits_usize, N3, usize),
+        (test_3bits_u64, N3, u64),
+        (test_3bits_u32, N3, u32),
+        (test_3bits_u16, N3, u16),
+        (test_3bits_u8, N3, u8),
+        (test_2bits_usize, N2, usize),
+        (test_2bits_u64, N2, u64),
+        (test_2bits_u32, N2, u32),
+        (test_2bits_u16, N2, u16),
+        (test_2bits_u8, N2, u8),
+        (test_1bits_usize, N1, usize),
+        (test_1bits_u64, N1, u64),
+        (test_1bits_u32, N1, u32),
+        (test_1bits_u16, N1, u16),
+        (test_1bits_u8, N1, u8)
     }
 }
