@@ -1,7 +1,7 @@
 //! A crate aims to resolve small bits values storage and operations problem.
 //!
 //! [![Build Status](https://travis-ci.org/zitsen/raw_nbits_vec.rs.svg?branch=master)]
-//! (https://travis-ci.org/zitsen/rawn_nbits_vec.rs)
+//! (https://travis-ci.org/zitsen/raw_nbits_vec.rs)
 //!
 //! [Documentation](http://zitsen.github.io/raw_nbits_vec.rs)
 //!
