@@ -40,28 +40,6 @@ pub trait Nbits {
     }
 }
 
-macro_rules! nbits_set {
-    ($(($t: ident, $size: expr)),*) => (
-        $(
-            /// Struct for each NBits
-            pub struct $t;
-            impl Nbits for $t {
-                #[inline]
-                fn bits() -> usize {
-                    $size
-                }
-            }
-        )*
-    )
-}
-
-nbits_set! {
-    (N1, 1),
-    (N2, 2),
-    (N3, 3),
-    (N4, 4)
-}
-
 /// Implement vector contains small `N`-bits values using `Block` as unit
 /// buffer.
 ///
@@ -90,33 +68,6 @@ pub struct NbitsVec<N: Nbits, Block: PrimInt = usize> {
     buf: RawVec<Block>,
     len: usize,
     _marker: PhantomData<N>,
-}
-
-impl<N: Nbits, Block: PrimInt> Default for NbitsVec<N, Block> {
-    fn default() -> Self {
-        NbitsVec {
-            buf: RawVec::new(),
-            len: 0,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<N: Nbits, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f,
-                    "NbitsVec<{}> {{ len: {}, buf: RawVec {{ cap: {}, [",
-                    N::bits(),
-                    self.len,
-                    self.buf.cap()));
-        let ptr = self.buf.ptr();
-        for i in 0..self.buf.cap() {
-            unsafe {
-                try!(write!(f, "{:#x}, ", ptr::read(ptr.offset(i as isize))));
-            }
-        }
-        write!(f, "] }}")
-    }
 }
 
 impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
@@ -517,8 +468,9 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(vec.buf_bits(), std::mem::size_of::<usize>() * 8);
     /// # }
     /// ```
+    #[inline]
     pub fn buf_bits(&self) -> usize {
-        self.buf.cap() * Self::buf_unit_bits()
+        self.buf_cap() * Self::buf_unit_bits()
     }
 
     /// Returns whether or not the vector is empty.
@@ -542,10 +494,6 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Appends an element to the back of a collection.
     ///
-    /// # Panics
-    ///
-    /// Panics if the number of elements in the vector overflows a `usize`.
-    ///
     /// # Examples
     ///
     /// ```
@@ -560,11 +508,10 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     pub fn push(&mut self, value: Block) {
         let len = self.len();
-        let new_len = len.checked_add(1).expect("usize added overflows");
-        if self.capacity() < new_len {
+        if self.capacity() == len {
             self.reserve(1);
         }
-        self.len = new_len;
+        self.len += 1;
         self.set(len, value);
     }
 
@@ -584,15 +531,15 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(vec.len(), 0);
     /// # }
     /// ```
+    #[inline]
     pub fn pop(&mut self) -> Option<Block> {
-        let len = self.len();
-        if self.is_empty() {
+        if self.len == 0 {
             return None;
+        } else {
+            let ret = Some(self.get(self.len() - 1));
+            self.len -= 1;
+            ret
         }
-        let new_len = len - 1;
-        let last = self.get(new_len);
-        self.len = new_len;
-        Some(last)
     }
 
     /// Resizes the Vec in-place so that len() is equal to new_len.
@@ -993,7 +940,7 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     pub fn get(&self, index: usize) -> Block {
         if index >= self.len {
-            panic!("attempt to get at {} but only {}", index, self.len);
+            panic!("index out of bounds: attempt to get at {} but only {}", index, self.len);
         }
         let unit = Self::unit_bits();
         unsafe { self.get_buf_bits(index * unit, unit) }
@@ -1054,6 +1001,7 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
             (_, _) => {
                 (offset..cmp::min(offset + length, self.buf_bits()))
                     .map(|x| self.get_buf_unit_bit(x))
+                    .rev()
                     .fold(Block::zero(), |v, x| v << 1 | x)
             }
         }
@@ -1077,7 +1025,7 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     }
 
     #[inline]
-    pub fn used_buf_cap(&self) -> usize {
+    fn used_buf_cap(&self) -> usize {
         let (index, offset) = Self::bit_index_to_buf(self.bits());
         if offset == 0 {
             index
@@ -1085,6 +1033,13 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
             index + 1
         }
     }
+
+    /// The `RawVec` buffer capacity(Block).
+    #[inline]
+    fn buf_cap(&self) -> usize {
+        self.buf.cap()
+    }
+
     /// Converts capacity to storage size
     #[inline]
     fn capacity_to_buf(capacity: usize) -> usize {
@@ -1122,9 +1077,19 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
         (index / unit, index % unit)
     }
 
+    #[inline]
+    fn buf_offset_of_bit(bit: usize) -> usize {
+        bit % Self::buf_unit_bits()
+    }
+
+    #[inline]
+    fn buf_index_of_bit(bit: usize) -> usize {
+        bit / Self::buf_unit_bits()
+    }
+
     /// Returns size of `B`.
     #[inline]
-    pub fn buf_unit_bits() -> usize {
+    fn buf_unit_bits() -> usize {
         mem::size_of::<Block>() * 8
     }
 
@@ -1133,35 +1098,45 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     fn unit_bits() -> usize {
         N::bits()
     }
+}
 
-    pub fn buf_cap(&self) -> usize {
-        self.buf.cap()
+impl<N: Nbits, Block: PrimInt> Default for NbitsVec<N, Block> {
+    fn default() -> Self {
+        NbitsVec {
+            buf: RawVec::new(),
+            len: 0,
+            _marker: PhantomData,
+        }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{N2, NbitsVec};
-
-    #[test]
-    fn test_unit_bits() {
-        type NV = NbitsVec<N2, u8>;
-        assert_eq!(NV::unit_bits(), 2);
-        assert_eq!(NV::capacity_to_buf(36), 9);
-        let mut vec = NV::with_capacity(36);
-        assert_eq!(vec.buf.cap(), 9);
-        vec.push(0);
-        assert_eq!(vec.buf.cap(), 9);
+impl<N: Nbits, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        try!(write!(f,
+                    "NbitsVec<{}> {{ len: {}, buf: RawVec {{ cap: {}, [",
+                    N::bits(),
+                    self.len,
+                    self.buf.cap()));
+        let ptr = self.buf.ptr();
+        for i in 0..self.buf.cap() {
+            unsafe {
+                try!(write!(f, "{:#x}, ", ptr::read(ptr.offset(i as isize))));
+            }
+        }
+        write!(f, "] }}")
     }
 }
+
 impl<N: Nbits, Block: PrimInt> ops::Deref for NbitsVec<N, Block> {
     type Target = [Block];
 
+    #[inline]
     fn deref(&self) -> &[Block] {
         self.as_raw_slice()
     }
 }
 impl<N: Nbits, Block: PrimInt> ops::DerefMut for NbitsVec<N, Block> {
+    #[inline]
     fn deref_mut(&mut self) -> &mut [Block] {
         self.as_mut_raw_slice()
     }
@@ -1209,3 +1184,28 @@ impl<N: Nbits, Block: PrimInt> Ord for NbitsVec<N, Block> {
         Ord::cmp(&**self, &**other)
     }
 }
+
+macro_rules! nbits_set {
+    ($(($t: ident, $size: expr)),*) => (
+        $(
+            /// Struct for each NBits
+            pub struct $t;
+            impl Nbits for $t {
+                #[inline]
+                fn bits() -> usize {
+                    $size
+                }
+            }
+        )*
+    )
+}
+
+nbits_set! {
+    (N1, 1),
+    (N2, 2),
+    (N3, 3),
+    (N4, 4)
+}
+
+#[cfg(test)]
+mod tests;
