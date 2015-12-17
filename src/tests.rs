@@ -28,7 +28,7 @@ macro_rules! generate_test {
                             }
                         }
                         mod public_api {
-                            use ::{NbitsVec, $nbits, Nbits};
+                            use ::{NbitsVec, $nbits};
                             type NV = NbitsVec<$nbits, $block>;
                             #[test]
                             fn new() {
@@ -75,6 +75,18 @@ macro_rules! generate_test {
                                 vec.resize(LEN, 1);
                                 vec.resize(LEN * 2, 2);
                                 vec.resize(LEN * 3, 3);
+                            }
+                            #[test]
+                            fn get_set() {
+                                let mut vec = NV::new();
+                                vec.resize(100, 0b1111);
+                                for i in 0..100 {
+                                    vec.set(i, 0);
+                                }
+                                for i in 0..100 {
+                                    let v = vec.get(i);
+                                    assert_eq!(v, 0);
+                                }
                             }
                         }
                     }
