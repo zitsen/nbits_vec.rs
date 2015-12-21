@@ -31,7 +31,11 @@ use std::ptr;
 use std::slice;
 use std::marker::PhantomData;
 
+/// An type only consume `bits()` method.
+///
+/// It will be removed when **integer template** is supported in `Rust` in the future.
 pub trait Nbits {
+    /// Returns `N` - the width of bits.
     fn bits() -> usize;
 
     #[inline]
@@ -940,7 +944,9 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     pub fn get(&self, index: usize) -> Block {
         if index >= self.len {
-            panic!("index out of bounds: attempt to get at {} but only {}", index, self.len);
+            panic!("index out of bounds: attempt to get at {} but only {}",
+                   index,
+                   self.len);
         }
         let unit = Self::unit_bits();
         unsafe { self.get_buf_bits(index * unit, unit) }
