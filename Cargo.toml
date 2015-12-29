@@ -13,10 +13,10 @@ Small bits value (e.g. 1,2.. bits) vector implementation.
 keywords = ["nbits", "bits-vec", "small bits", "vec", "vector"]
 
 [dependencies]
-num = "0.1.28"
+num = "0.1.29"
 
 [dependencies.clippy]
-version = "0.0.30"
+version = "0.0.33"
 optional = true
 
 [features]
