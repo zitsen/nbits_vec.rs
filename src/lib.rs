@@ -118,6 +118,39 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
     }
 
+    /// Constructs a `NbitsVec<N, Block>` directly from the raw components of another vector,
+    /// like [standard Vec][std::vec::Vec] does.
+    ///
+    /// # Safety
+    ///
+    /// This is highly unsafe, due to the number of invariants that aren't checked:
+    ///
+    /// * `ptr` needs to have been previously allocated via `Vec<T>/NbitsVec<N, Block>`.
+    /// * `length` needs to be the length that less than or equal to `capacity`.
+    /// * `capacity` needs to be the `capacity` as a `NbitsVec<N, Block>`, not the size that
+    /// the pointer was allocated with.
+    ///
+    /// # Examples
+    /// ```
+    /// # extern crate raw_nbits_vec;
+    /// # use raw_nbits_vec::*;
+    /// use std::mem;
+    /// fn main() {
+    ///     let mut v: NbitsVec<N2> = NbitsVec::with_capacity(10);
+    ///     v.push(1); v.push(2); v.push(3);
+    ///     let p = v.as_mut_ptr();
+    ///     let len = v.len();
+    ///     let cap = v.capacity();
+    ///     unsafe {
+    ///         mem::forget(v);
+    ///         let rebuilt: NbitsVec<N2> = NbitsVec::from_raw_parts(p, len, cap);
+    ///         assert!(cap == rebuilt.capacity());
+    ///     }
+    /// }
+    /// ```
+    ///
+    /// [std::vec::Vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.from_raw_parts
+    #[inline]
     pub unsafe fn from_raw_parts(ptr: *mut Block, length: usize, capacity: usize) -> Self {
         Self::check_if_n_valid();
         NbitsVec {
