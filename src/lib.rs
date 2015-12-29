@@ -34,19 +34,6 @@ use std::marker::PhantomData;
 use typenum::NonZero;
 use typenum::uint::Unsigned;
 
-/// An type only consume `bits()` method.
-///
-/// It will be removed when **integer template** is supported in `Rust` in the future.
-pub trait Nbits {
-    /// Returns `N` - the width of bits.
-    fn bits() -> usize;
-
-    #[inline]
-    fn mask() -> usize {
-        (0..).take(Self::bits()).fold(0, |mask, _x| mask << 1 | 1)
-    }
-}
-
 /// Implement vector contains small `N`-bits values using `Block` as unit
 /// buffer.
 ///
