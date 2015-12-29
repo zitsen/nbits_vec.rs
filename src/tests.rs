@@ -9,21 +9,21 @@ macro_rules! generate_test {
                             use ::std::mem::size_of;
                             type NV = NbitsVec<$nbits, $block>;
                             #[test]
-                            fn unit_bits() {
-                                assert!(NV::unit_bits() > 0);
+                            fn nbits() {
+                                assert!(NV::nbits() > 0);
                             }
                             #[test]
-                            fn buf_unit_bits() {
-                                assert_eq!(NV::buf_unit_bits(), size_of::<$block>() * 8);
+                            fn block_bits() {
+                                assert_eq!(NV::block_bits(), size_of::<$block>() * 8);
                             }
                             #[test]
                             fn bit_index_to_buf() {
                                 assert_eq!(NV::bit_index_to_buf(0), (0, 0));
                                 assert_eq!(NV::bit_index_to_buf(1), (0, 1));
-                                let buf_unit_bits = NV::buf_unit_bits();
+                                let block_bits = NV::block_bits();
                                 for i in 3..79 {
                                     assert_eq!(NV::bit_index_to_buf(i),
-                                                (i / buf_unit_bits, i % buf_unit_bits));
+                                                (i / block_bits, i % block_bits));
                                 }
                             }
                         }

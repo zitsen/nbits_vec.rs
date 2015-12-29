@@ -489,7 +489,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub fn bits(&self) -> usize {
-        self.len() * Self::unit_bits()
+        self.len() * Self::nbits()
     }
 
     /// Total bits in buf.
@@ -506,7 +506,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub fn buf_bits(&self) -> usize {
-        self.buf_cap() * Self::buf_unit_bits()
+        self.buf_cap() * Self::block_bits()
     }
 
     /// Returns whether or not the vector is empty.
@@ -648,8 +648,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     pub fn align(&mut self, offset: usize, to: usize) {
-        let unit = Self::unit_bits();
-        let buf_unit = Self::buf_unit_bits();
+        let unit = Self::nbits();
+        let buf_unit = Self::block_bits();
         let unit_cap = buf_unit / unit;
         if offset > to {
             // Reduce `interval` length.
@@ -734,11 +734,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub unsafe fn fill_buf(&mut self, index: usize, length: usize, value: Block) {
-        let unit = Self::unit_bits();
+        let unit = Self::nbits();
         if length == 1 {
             return self.set_buf_bits(index * unit, unit, value);
         }
-        let buf_unit = Self::buf_unit_bits();
+        let buf_unit = Self::block_bits();
         if (length <= buf_unit / unit) || buf_unit % unit != 0 {
             for i in (index..).take(length) {
                 self.set_buf_bits(i * unit, unit, value);
@@ -761,15 +761,15 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             }
             ((start_idx, start_offset), (end_idx, end_offset)) if start_offset == 0 => {
                 write_buf(start_idx, end_idx);
-                self.set_buf_unit_bits(end_idx * buf_unit, end_offset, item);
+                self.set_block_bits(end_idx * buf_unit, end_offset, item);
             }
             ((start_idx, start_offset), (end_idx, end_offset)) if end_offset == 0 => {
-                self.set_buf_unit_bits(index * unit, buf_unit - start_offset, item);
+                self.set_block_bits(index * unit, buf_unit - start_offset, item);
                 write_buf(start_idx + 1, end_idx);
             }
             ((start_idx, start_offset), (end_idx, end_offset)) => {
-                self.set_buf_unit_bits(index * unit, buf_unit - start_offset, item);
-                self.set_buf_unit_bits(end_idx * buf_unit, end_offset, item);
+                self.set_block_bits(index * unit, buf_unit - start_offset, item);
+                self.set_block_bits(end_idx * buf_unit, end_offset, item);
                 write_buf(start_idx + 1, end_idx);
             }
         }
@@ -793,7 +793,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             panic!("attempt to set at {} but only {}", index, self.len);
         }
         unsafe {
-            let unit = Self::unit_bits();
+            let unit = Self::nbits();
             self.set_buf_bits(index * unit, unit, value);
         }
     }
@@ -897,7 +897,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub unsafe fn set_buf_bits(&mut self, offset: usize, length: usize, value: Block) {
-        let buf_unit = Self::buf_unit_bits();
+        let buf_unit = Self::block_bits();
         if length > buf_unit {
             panic!("set {} buf bits longer than buf unit bits {}",
                    length,
@@ -906,13 +906,13 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if length == 1 {
             return self.set_buf_unit_bit(offset, value & Block::one() == Block::one());
         }
-        match Self::unit_bits() {
+        match Self::nbits() {
             unit if unit == buf_unit => {
                 // NOTE: maybe unreachable!() is better.
-                self.set_buf_unit_bits(offset, length, value);
+                self.set_block_bits(offset, length, value);
             }
             unit if unit < buf_unit && buf_unit % unit == 0 => {
-                self.set_buf_unit_bits(offset, length, value);
+                self.set_block_bits(offset, length, value);
             }
             _ => {
                 let mut v = value;
@@ -926,7 +926,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Set buf element of `index` at offset `from` to `to` as `value`.
     #[inline]
-    unsafe fn set_buf_unit_bits(&mut self, offset: usize, length: usize, value: Block) {
+    unsafe fn set_block_bits(&mut self, offset: usize, length: usize, value: Block) {
         let (index, offset) = Self::bit_index_to_buf(offset);
         let mask = (offset..)
                        .take(length)
@@ -980,7 +980,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                    index,
                    self.len);
         }
-        let unit = Self::unit_bits();
+        let unit = Self::nbits();
         unsafe { self.get_buf_bits(index * unit, unit) }
     }
 
@@ -1019,7 +1019,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub unsafe fn get_buf_bits(&self, offset: usize, length: usize) -> Block {
-        let buf_unit = Self::buf_unit_bits();
+        let buf_unit = Self::block_bits();
         if length > buf_unit {
             panic!("get {} buf bits longer than buf unit bits {}",
                    length,
@@ -1028,13 +1028,13 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if length == 1 {
             return self.get_buf_unit_bit(offset);
         }
-        match (Self::unit_bits(), Self::buf_unit_bits()) {
+        match (Self::nbits(), Self::block_bits()) {
             (unit, buf_unit) if unit == buf_unit => {
                 // NOTE: maybe unreachable!() is better
-                self.get_buf_unit_bits(offset, length)
+                self.get_block_bits(offset, length)
             }
             (unit, buf_unit) if unit < buf_unit && buf_unit % unit == 0 => {
-                self.get_buf_unit_bits(offset, length)
+                self.get_block_bits(offset, length)
             }
             (_, _) => {
                 (offset..cmp::min(offset + length, self.buf_bits()))
@@ -1055,10 +1055,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Get buf `length` bits of unit at `index`th unit's `offset`th bit
     #[inline]
-    unsafe fn get_buf_unit_bits(&self, offset: usize, length: usize) -> Block {
+    unsafe fn get_block_bits(&self, offset: usize, length: usize) -> Block {
         let offset = Self::bit_index_to_buf(offset);
         let ptr = self.buf.ptr().offset(offset.0 as isize);
-        let unit = Self::buf_unit_bits();
+        let unit = Self::block_bits();
         (ptr::read(ptr) << (unit - offset.1 - length)) >> (unit - length)
     }
 
@@ -1090,14 +1090,14 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Converts the storage size to capacity.
     #[inline]
     fn capacity_from_buf(buf_cap: usize) -> usize {
-        buf_cap * Self::buf_unit_bits() / Self::unit_bits()
+        buf_cap * Self::block_bits() / Self::nbits()
     }
 
     /// Converts the vector index to buf `(index, offset)` tuple.
     #[inline]
     fn index_to_buf(index: usize) -> (usize, usize) {
-        let elem_bits = Self::buf_unit_bits();
-        let bits_index = index * Self::unit_bits();
+        let elem_bits = Self::block_bits();
+        let bits_index = index * Self::nbits();
         (bits_index / elem_bits, bits_index % elem_bits)
     }
 
@@ -1111,39 +1111,46 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Converts bit index to buf `(index, offset)` tuple.
     #[inline]
     fn bit_index_to_buf(index: usize) -> (usize, usize) {
-        let unit = Self::buf_unit_bits();
+        let unit = Self::block_bits();
         (index / unit, index % unit)
     }
 
     #[inline]
-    fn buf_offset_of_bit(bit: usize) -> usize {
-        bit % Self::buf_unit_bits()
+    fn bit_offset(bit: usize) -> usize {
+        bit % Self::block_bits()
     }
 
     #[inline]
-    fn buf_index_of_bit(bit: usize) -> usize {
-        bit / Self::buf_unit_bits()
+    fn bit_index(bit: usize) -> usize {
+        bit / Self::block_bits()
     }
 
     /// Returns size of `B`.
     #[inline]
-    fn buf_unit_bits() -> usize {
+    fn block_bits() -> usize {
         mem::size_of::<Block>() * 8
     }
 
-    /// Returns unit of bits - that is `NbitsVec`'s `N`.
+    /// Returns unit of bits - that is `NbitsVec`'s `N` meaning.
     #[inline]
-    fn unit_bits() -> usize {
+    pub fn nbits() -> usize {
         N::to_usize()
     }
 
     #[inline]
     fn check_if_n_valid() {
-        if Self::unit_bits() > Self::buf_unit_bits() {
-            panic!("`N` should be less than block's bits count, while your expect storing `{}`bits in a `{}`bits block vector", Self::unit_bits(), Self::buf_unit_bits());
+        if Self::nbits() > Self::block_bits() {
+            panic!("`N` should be less than block's bits count, while your expect storing `{}`bits in a `{}`bits block vector", Self::nbits(), Self::block_bits());
         }
     }
 }
+
+struct Loc {
+    index: usize,
+    offset: usize,
+}
+
+type BitLoc = Loc;
 
 impl<N: Unsigned + NonZero, Block: PrimInt> Default for NbitsVec<N, Block> {
     fn default() -> Self {
@@ -1234,24 +1241,6 @@ unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Send for NbitsVec<N, Block> {
 
 unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Sync for NbitsVec<N, Block> { }
 
-macro_rules! nbits_set {
-    ($(($t: ident, $size: expr)),*) => (
-        $(
-            /// Struct for each NBits
-            pub struct $t;
-            impl Nbits for $t {
-                #[inline]
-                fn bits() -> usize {
-                    $size
-                }
-            }
-        )*
-    )
-}
-
-#[cfg(test)]
-mod tests;
-
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub use typenum::consts::{
     U1 as N1,
@@ -1318,3 +1307,6 @@ pub use typenum::consts::{
     U62 as N62,
     U63 as N63,
 };
+
+#[cfg(test)]
+mod tests;
