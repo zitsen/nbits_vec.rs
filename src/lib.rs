@@ -30,7 +30,7 @@ use std::hash::{self, Hash};
 use std::mem;
 use std::ptr;
 use std::slice;
-use std::marker::PhantomData;
+use std::marker::{PhantomData, Send, Sync};
 use typenum::NonZero;
 use typenum::uint::Unsigned;
 
@@ -1196,6 +1196,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> Ord for NbitsVec<N, Block> {
         Ord::cmp(&**self, &**other)
     }
 }
+
+unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Send for NbitsVec<N, Block> { }
+
+unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Sync for NbitsVec<N, Block> { }
 
 macro_rules! nbits_set {
     ($(($t: ident, $size: expr)),*) => (

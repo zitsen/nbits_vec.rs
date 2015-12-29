@@ -89,6 +89,43 @@ macro_rules! generate_test {
                                 }
                             }
                         }
+
+                        mod threadsafe {
+                            use ::{NbitsVec, $nbits};
+                            type NV = NbitsVec<$nbits, $block>;
+
+                            #[test]
+                            fn new() {
+                                use std::thread;
+                                use std::sync::mpsc::channel;
+                                let (tx, rx) = channel();
+                                for _ in 0..10 {
+                                    let tx = tx.clone();
+                                    thread::spawn(move || {
+                                        tx.send(NV::new()).unwrap();
+                                    });
+                                }
+                                for _ in 0..10 {
+                                    let _ = rx.recv().unwrap();
+                                }
+                            }
+                            #[test]
+                            fn with_capacity() {
+                                use std::thread;
+                                use std::sync::mpsc::channel;
+                                let (tx, rx) = channel();
+                                for i in 0..10 {
+                                    let tx = tx.clone();
+                                    thread::spawn(move || {
+                                        tx.send(NV::with_capacity(i)).unwrap();
+                                    });
+                                }
+                                for i in 0..10 {
+                                    let j = rx.recv().unwrap();
+                                    println!("{} capacity: {}", i, j.capacity());
+                                }
+                            }
+                        }
                     }
                  )*
             }
