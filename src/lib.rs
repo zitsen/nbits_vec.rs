@@ -112,7 +112,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     pub fn with_capacity(capacity: usize) -> Self {
         Self::check_if_n_valid();
         NbitsVec {
-            buf: RawVec::with_capacity(Self::capacity_to_buf(capacity)),
+            buf: RawVec::with_capacity(Self::raw_cap_from(capacity)),
             len: 0,
             _marker: PhantomData,
         }
@@ -154,7 +154,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     pub unsafe fn from_raw_parts(ptr: *mut Block, length: usize, capacity: usize) -> Self {
         Self::check_if_n_valid();
         NbitsVec {
-            buf: RawVec::from_raw_parts(ptr, Self::capacity_to_buf(capacity)),
+            buf: RawVec::from_raw_parts(ptr, Self::raw_cap_from(capacity)),
             len: length,
             _marker: PhantomData,
         }
@@ -174,7 +174,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline(always)]
     pub fn capacity(&self) -> usize {
-        Self::capacity_from_buf(self.buf.cap())
+        Self::cap_from(self.buf.cap())
     }
 
     /// Reserves capacity for at least additional more elements to be inserted in the given
@@ -197,10 +197,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert!(v.capacity() >= 100);
     /// # }
     /// ```
+    #[inline]
     pub fn reserve(&mut self, additional: usize) {
         let required_cap = self.len().checked_add(additional).expect("capacity overflow");
-        let used_cap = Self::capacity_to_buf(self.len());
-        let need_extra_cap = Self::capacity_to_buf(required_cap);
+        let used_cap = Self::raw_cap_from(self.len());
+        let need_extra_cap = Self::raw_cap_from(required_cap);
         self.buf.reserve(used_cap, need_extra_cap);
     }
 
@@ -227,10 +228,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(v.capacity(), 128);
     /// # }
     /// ```
+    #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         let required_cap = self.len().checked_add(additional).expect("capacity overflow");
-        let used_cap = Self::capacity_to_buf(self.len());
-        let need_extra_cap = Self::capacity_to_buf(required_cap);
+        let used_cap = Self::raw_cap_from(self.len());
+        let need_extra_cap = Self::raw_cap_from(required_cap);
         self.buf.reserve_exact(used_cap, need_extra_cap);
     }
     /// Shrinks the capacity of the vector as much as possible.
@@ -250,8 +252,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     ///
+    #[inline]
     pub fn shrink_to_fit(&mut self) {
-        let fit_len = Self::capacity_to_buf(self.len());
+        let fit_len = Self::raw_cap_from(self.len());
         self.buf.shrink_to_fit(fit_len);
     }
 
@@ -273,6 +276,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(vec.len(), 1);
     /// # }
     /// ```
+    #[inline]
     pub fn truncate(&mut self, len: usize) {
         if self.len() > len {
             self.len = len;
@@ -283,14 +287,14 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
-            slice::from_raw_parts(p, self.used_buf_cap())
+            slice::from_raw_parts(p, self.used_raw_cap())
         }
     }
     pub fn as_mut_raw_slice(&mut self) -> &mut [Block] {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
-            slice::from_raw_parts_mut(p, self.used_buf_cap())
+            slice::from_raw_parts_mut(p, self.used_raw_cap())
         }
     }
     pub fn into_raw_boxed_slice(mut self) -> Box<[Block]> {
@@ -347,6 +351,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(v.get(1), 0b11);
     /// assert_eq!(v.get(2), 0b10);
     /// # }
+    #[inline]
     pub fn insert(&mut self, index: usize, element: Block) {
         self.align(index, index + 1);
         self.set(index, element);
@@ -371,6 +376,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(v.remove(0), 0b01);
     /// # }
     /// ```
+    #[inline]
     pub fn remove(&mut self, index: usize) -> Block {
         if index >= self.len {
             panic!("index is out of bounds");
@@ -415,6 +421,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(v.swap_remove(0), 0b11);
     /// # }
     /// ```
+    #[inline]
     pub fn swap_remove(&mut self, index: usize) -> Block {
         if index >= self.len {
             panic!("index is out of bounds");
@@ -453,6 +460,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # assert_eq!(vec.get(1), 0b10);
     /// # }
     /// ```
+    #[inline]
     pub fn append(&mut self, other: &mut Self) {
         let other_len = other.len();
         self.reserve_exact(other_len);
@@ -501,12 +509,12 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # use raw_nbits_vec::*;
     /// # fn main() {
     /// let vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
-    /// assert_eq!(vec.buf_bits(), std::mem::size_of::<usize>() * 8);
+    /// assert_eq!(vec.raw_bits(), std::mem::size_of::<usize>() * 8);
     /// # }
     /// ```
     #[inline]
-    pub fn buf_bits(&self) -> usize {
-        self.buf_cap() * Self::block_bits()
+    pub fn raw_bits(&self) -> usize {
+        self.raw_cap() * Self::block_bits()
     }
 
     /// Returns whether or not the vector is empty.
@@ -542,6 +550,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(vec.len(), 2);
     /// # }
     /// ```
+    #[inline]
     pub fn push(&mut self, value: Block) {
         let len = self.len();
         if self.capacity() == len {
@@ -647,6 +656,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// println!("{:?}", vec);
     /// # }
     /// ```
+    #[inline]
     pub fn align(&mut self, offset: usize, to: usize) {
         let unit = Self::nbits();
         let buf_unit = Self::block_bits();
@@ -734,19 +744,29 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub unsafe fn fill_buf(&mut self, index: usize, length: usize, value: Block) {
-        let unit = Self::nbits();
-        if length == 1 {
-            return self.set_buf_bits(index * unit, unit, value);
-        }
-        let buf_unit = Self::block_bits();
-        if (length <= buf_unit / unit) || buf_unit % unit != 0 {
+        // if packed
+        if Self::is_packed() {
             for i in (index..).take(length) {
-                self.set_buf_bits(i * unit, unit, value);
+                let ptr = self.buf.ptr().offset(i as isize);
+                ptr::write(ptr, value);
             }
+            return;
         }
 
-        let mul = buf_unit / unit;
-        let item = (0..mul).fold(Block::zero(), |v, _x| v << unit | value);
+        let nbits = Self::nbits();
+        let block_bits = Self::block_bits();
+        let block_cap = block_bits / nbits;
+
+        // length too short or not aligned
+        if !Self::is_aligned() || length < block_cap {
+            for i in (index..).take(length) {
+                self.set_raw_bits(i * nbits, nbits, value);
+            }
+            return;
+        }
+        // if aligned
+        let item = (0..).take(block_cap)
+            .fold(Block::zero(), |v, _x| v << nbits | value);
         let ptr = self.buf.ptr();
         let write_buf = |start: usize, end: usize| {
             (start..end).fold(ptr.offset(start as isize), |ptr, _x| {
@@ -755,17 +775,18 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             });
         };
         let (start, end) = Self::loc_range(index, length);
+
         if start.offset == 0 && end.offset == 0 {
             write_buf(start.index, end.index)
         } else if start.offset == 0 {
             write_buf(start.index, end.index);
-            self.set_block_bits(end.index * buf_unit, end.offset, item);
+            self.set_block_bits(end.index * block_bits, end.offset, item);
         } else if end.offset == 0 {
-            self.set_block_bits(index * unit, buf_unit - start.offset, item);
+            self.set_block_bits(index * nbits, block_bits - start.offset, item);
             write_buf(start.index + 1, end.index);
         } else {
-            self.set_block_bits(index * unit, buf_unit - start.offset, item);
-            self.set_block_bits(end.index * buf_unit, end.offset, item);
+            self.set_block_bits(index * nbits, block_bits - start.offset, item);
+            self.set_block_bits(end.index * block_bits, end.offset, item);
             write_buf(start.index + 1, end.index);
         }
     }
@@ -789,7 +810,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
         unsafe {
             let unit = Self::nbits();
-            self.set_buf_bits(index * unit, unit, value);
+            self.set_raw_bits(index * unit, unit, value);
         }
     }
 
@@ -852,7 +873,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if at >= bits {
             return None;
         } else {
-            unsafe { Some(self.get_buf_unit_bit(at) == Block::one()) }
+            unsafe { Some(self.get_raw_bit(at) == Block::one()) }
         }
     }
 
@@ -860,7 +881,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// ## Unsafety
     ///
-    /// `set_buf_bits` will not check the `offset`. Users should ensure to do this manually.
+    /// `set_raw_bits` will not check the `offset`. Users should ensure to do this manually.
     ///
     /// ## Panics
     ///
@@ -876,22 +897,22 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// unsafe {
     ///     println!("Set buf 0 as 1");
-    ///     vec.set_buf_bits(0, 1, 1);
+    ///     vec.set_raw_bits(0, 1, 1);
     ///     println!("Set buf bits [1, 2] as `10`");
-    ///     vec.set_buf_bits(1, 2, 2);
+    ///     vec.set_raw_bits(1, 2, 2);
     ///     println!("Set buf bits [3, 6] as `1010`");
-    ///     vec.set_buf_bits(3, 4, 0b1010);
+    ///     vec.set_raw_bits(3, 4, 0b1010);
     /// }
     /// println!("{:?}", vec);
     /// unsafe {
-    ///     assert_eq!(vec.get_buf_bits(0, 1), 1);
-    ///     assert_eq!(vec.get_buf_bits(1, 2), 2);
-    ///     assert_eq!(vec.get_buf_bits(3, 4), 0b1010);
+    ///     assert_eq!(vec.get_raw_bits(0, 1), 1);
+    ///     assert_eq!(vec.get_raw_bits(1, 2), 2);
+    ///     assert_eq!(vec.get_raw_bits(3, 4), 0b1010);
     /// }
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn set_buf_bits(&mut self, offset: usize, length: usize, value: Block) {
+    pub unsafe fn set_raw_bits(&mut self, offset: usize, length: usize, value: Block) {
         let buf_unit = Self::block_bits();
         if length > buf_unit {
             panic!("set {} buf bits longer than buf unit bits {}",
@@ -901,6 +922,21 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if length == 1 {
             return self.set_buf_unit_bit(offset, value & Block::one() == Block::one());
         }
+        if Self::is_packed() {
+            let ptr = self.buf.ptr().offset(Self::bit_index(offset) as isize);
+            ptr::write(ptr, value);
+            return;
+        }
+        if Self::is_aligned() || Self::bit_offset(offset) < Self::bit_offset(offset + length) {
+            self.set_block_bits(offset, length, value);
+        } else {
+            (offset..cmp::min(offset + length, self.raw_bits()))
+                .fold(value, | v, x| {
+                    self.set_buf_unit_bit(x, v & Block::one() == Block::one());
+                    v >> 1
+                });
+        }
+        /*
         match Self::nbits() {
             unit if unit == buf_unit => {
                 // NOTE: maybe unreachable!() is better.
@@ -911,12 +947,12 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             }
             _ => {
                 let mut v = value;
-                for x in offset..cmp::min(offset + length, self.buf_bits()) {
+                for x in offset..cmp::min(offset + length, self.raw_bits()) {
                     self.set_buf_unit_bit(x, v & Block::one() == Block::one());
                     v = v >> 1;
                 }
             }
-        }
+        }*/
     }
 
     /// Set buf element of `index` at offset `from` to `to` as `value`.
@@ -953,10 +989,6 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Get `N` bits value as `B`.
     ///
-    /// ## TODO
-    ///
-    /// ?? Is a `Nbits` object is better than `B` ??
-    ///
     /// ## Examples
     ///
     /// ```
@@ -969,6 +1001,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(vec.get(0), 0b11);
     /// # }
     /// ```
+    #[inline]
     pub fn get(&self, index: usize) -> Block {
         if index >= self.len {
             panic!("index out of bounds: attempt to get at {} but only {}",
@@ -976,14 +1009,14 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                    self.len);
         }
         let unit = Self::nbits();
-        unsafe { self.get_buf_bits(index * unit, unit) }
+        unsafe { self.get_raw_bits(index * unit, unit) }
     }
 
     /// Get `length` bits of buf at `offset`th bit.
     ///
     /// # Unsafety
     ///
-    /// `get_buf_bits` will not check the `offset`. Users should ensure to do this manually.
+    /// `get_raw_bits` will not check the `offset`. Users should ensure to do this manually.
     ///
     /// # Panics
     ///
@@ -1004,46 +1037,44 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// println!("{:?}", vec);
     /// unsafe {
     ///     println!("Get buf bits at 0 with length 1");
-    ///     assert_eq!(vec.get_buf_bits(0, 1), 1);
+    ///     assert_eq!(vec.get_raw_bits(0, 1), 1);
     ///     println!("Get buf bits at 1 with length 2");
-    ///     assert_eq!(vec.get_buf_bits(1, 2), 2);
+    ///     assert_eq!(vec.get_raw_bits(1, 2), 2);
     ///     println!("Get buf bits at 3 with length 4");
-    ///     assert_eq!(vec.get_buf_bits(3, 4), 0b1010);
+    ///     assert_eq!(vec.get_raw_bits(3, 4), 0b1010);
     /// }
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn get_buf_bits(&self, offset: usize, length: usize) -> Block {
-        let buf_unit = Self::block_bits();
-        if length > buf_unit {
+    pub unsafe fn get_raw_bits(&self, pos: usize, length: usize) -> Block {
+        let block_bits = Self::block_bits();
+        if length > block_bits {
             panic!("get {} buf bits longer than buf unit bits {}",
                    length,
-                   buf_unit);
+                   block_bits);
         }
         if length == 1 {
-            return self.get_buf_unit_bit(offset);
+            return self.get_raw_bit(pos);
         }
-        match (Self::nbits(), Self::block_bits()) {
-            (unit, buf_unit) if unit == buf_unit => {
-                // NOTE: maybe unreachable!() is better
-                self.get_block_bits(offset, length)
-            }
-            (unit, buf_unit) if unit < buf_unit && buf_unit % unit == 0 => {
-                self.get_block_bits(offset, length)
-            }
-            (_, _) => {
-                (offset..cmp::min(offset + length, self.buf_bits()))
-                    .map(|x| self.get_buf_unit_bit(x))
+        if Self::is_packed() {
+            let ptr = self.buf.ptr().offset(Self::bit_index(pos) as isize);
+            return ptr::read(ptr);
+        }
+        if Self::is_aligned() || Self::bit_offset(pos) < Self::bit_offset(pos + length) {
+            return self.get_block_bits(pos, length);
+        } else {
+            (pos..cmp::min(pos + length, self.raw_bits()))
+                    .map(|x| self.get_raw_bit(x))
                     .rev()
                     .fold(Block::zero(), |v, x| v << 1 | x)
-            }
+
         }
     }
 
-    /// Get buf unit bit at `index`th unit of `offset`bit.
+    /// Get raw bit at `pos`.
     #[inline]
-    unsafe fn get_buf_unit_bit(&self, offset: usize) -> Block {
-        let loc = Self::bit_loc(offset);
+    unsafe fn get_raw_bit(&self, pos: usize) -> Block {
+        let loc = Self::bit_loc(pos);
         let ptr = self.buf.ptr().offset(loc.index as isize);
         ptr::read(ptr) >> loc.offset & Block::one()
     }
@@ -1057,8 +1088,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         (ptr::read(ptr) << (unit - loc.offset - length)) >> (unit - length)
     }
 
+    /// Used capacity in `RawVec`.
     #[inline]
-    fn used_buf_cap(&self) -> usize {
+    fn used_raw_cap(&self) -> usize {
         let loc = Self::bit_loc(self.bits());
         if loc.offset == 0 {
             loc.index
@@ -1069,14 +1101,26 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// The `RawVec` buffer capacity(Block).
     #[inline]
-    fn buf_cap(&self) -> usize {
+    fn raw_cap(&self) -> usize {
         self.buf.cap()
+    }
+
+    /// A `NbitsVec` is `aligned` when `block_bits` is divisible by `nbits`.
+    #[inline]
+    fn is_aligned() -> bool {
+        Self::block_bits() % Self::nbits() == 0
+    }
+
+    /// A `NbitsVec` is `packed` when `block_bits` is equal to `nbits`.
+    #[inline]
+    fn is_packed() -> bool {
+        Self::block_bits() == Self::nbits()
     }
 
     /// Converts capacity to storage size
     #[inline]
-    fn capacity_to_buf(capacity: usize) -> usize {
-        let loc = Self::loc(capacity);
+    fn raw_cap_from(cap: usize) -> usize {
+        let loc = Self::loc(cap);
         if loc.offset == 0 {
             loc.index
         } else {
@@ -1086,8 +1130,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Converts the storage size to capacity.
     #[inline]
-    fn capacity_from_buf(buf_cap: usize) -> usize {
-        buf_cap * Self::block_bits() / Self::nbits()
+    fn cap_from(raw_cap: usize) -> usize {
+        raw_cap * Self::block_bits() / Self::nbits()
     }
 
     /// Converts the vector index to buf `(index, offset)` tuple.
@@ -1099,11 +1143,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Converts the vector index range to buf `(index, offset)` range tuple.
     #[inline]
     fn loc_range(index: usize, length: usize) -> (Loc, Loc) {
-        (Self::loc(index),
-         Self::loc(index + length))
+        (Self::loc(index), Self::loc(index + length))
     }
 
-    /// Converts bit index to buf `(index, offset)` tuple.
+    /// Converts bit index to buf `BitLoc`.
     #[inline]
     fn bit_loc(bit: usize) -> BitLoc {
         BitLoc::from_unit(bit, Self::block_bits())
@@ -1228,7 +1271,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> Clone for NbitsVec<N, Block> {
     fn clone(&self) -> Self {
         let mut new = Self::with_capacity(self.len());
         unsafe {
-            ptr::copy_nonoverlapping(self.buf.ptr(), new.buf.ptr(), self.used_buf_cap());
+            ptr::copy_nonoverlapping(self.buf.ptr(), new.buf.ptr(), self.used_raw_cap());
             new.set_len(self.len());
         }
         new

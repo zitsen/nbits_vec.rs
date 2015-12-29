@@ -35,17 +35,17 @@ macro_rules! generate_test {
                                 let vec = NV::new();
                                 assert_eq!(vec.capacity(), 0);
                                 assert_eq!(vec.len(), 0);
-                                assert_eq!(vec.used_buf_cap(), 0);
-                                assert_eq!(vec.buf_cap(), 0);
+                                assert_eq!(vec.used_raw_cap(), 0);
+                                assert_eq!(vec.raw_cap(), 0);
                             }
                             #[test]
                             fn push_pop() {
                                 let mut vec = NV::new();
                                 vec.push(1);
-                                assert!(vec.capacity() > 1);
+                                assert!(vec.capacity() >= 1);
                                 assert_eq!(vec.len(), 1);
-                                assert_eq!(vec.used_buf_cap(), 1);
-                                assert_eq!(vec.buf_cap(), 1);
+                                assert_eq!(vec.used_raw_cap(), 1);
+                                assert_eq!(vec.raw_cap(), 1);
                                 println!("{:?}", vec);
                                 assert_eq!(vec.pop(), Some(1));
                                 println!("Push...");
@@ -60,10 +60,12 @@ macro_rules! generate_test {
                             #[test]
                             fn resize() {
                                 let mut vec = NV::new();
+                                println!("resize 100 `1`");
                                 vec.resize(100, 1);
                                 assert_eq!(vec.len(), 100);
                                 assert!(vec.capacity() >= 100);
                                 let bigger_cap = vec.capacity();
+                                println!("resize to 10 `0`");
                                 vec.resize(10, 0);
                                 assert_eq!(vec.len(), 10);
                                 assert!(vec.capacity() < bigger_cap);
@@ -138,6 +140,7 @@ generate_test! {
     (n2 N2 => u8 u16 u32 u64 usize)
     (n3 N3 => u8 u16 u32 u64 usize)
     (n4 N4 => u8 u16 u32 u64 usize)
+    (n8 N8 => u8 u16 u32 u64 usize)
 }
 
 macro_rules! panic_test {
