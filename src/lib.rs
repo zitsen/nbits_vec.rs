@@ -19,6 +19,7 @@
 
 extern crate alloc;
 extern crate num;
+extern crate typenum;
 
 use alloc::raw_vec::RawVec;
 use num::PrimInt;
@@ -30,6 +31,8 @@ use std::mem;
 use std::ptr;
 use std::slice;
 use std::marker::PhantomData;
+use typenum::NonZero;
+use typenum::uint::Unsigned;
 
 /// An type only consume `bits()` method.
 ///
@@ -68,13 +71,13 @@ pub trait Nbits {
 ///     assert_eq!(n2bits_vec.get(7), 0b10);
 /// }
 /// ```
-pub struct NbitsVec<N: Nbits, Block: PrimInt = usize> {
+pub struct NbitsVec<N: Unsigned + NonZero, Block: PrimInt = usize> {
     buf: RawVec<Block>,
     len: usize,
     _marker: PhantomData<N>,
 }
 
-impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Constructs a new, empty NbitsVec<N>
     ///
     /// The vector will not allocate until elements are pushed onto it.
@@ -1102,11 +1105,11 @@ impl<N: Nbits, Block: PrimInt> NbitsVec<N, Block> {
     /// Returns unit of bits - that is `NbitsVec`'s `N`.
     #[inline]
     fn unit_bits() -> usize {
-        N::bits()
+        N::to_usize()
     }
 }
 
-impl<N: Nbits, Block: PrimInt> Default for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> Default for NbitsVec<N, Block> {
     fn default() -> Self {
         NbitsVec {
             buf: RawVec::new(),
@@ -1116,11 +1119,11 @@ impl<N: Nbits, Block: PrimInt> Default for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Nbits, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f,
                     "NbitsVec<{}> {{ len: {}, buf: RawVec {{ cap: {}, [",
-                    N::bits(),
+                    N::to_usize(),
                     self.len,
                     self.buf.cap()));
         let ptr = self.buf.ptr();
@@ -1133,7 +1136,7 @@ impl<N: Nbits, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Nbits, Block: PrimInt> ops::Deref for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> ops::Deref for NbitsVec<N, Block> {
     type Target = [Block];
 
     #[inline]
@@ -1141,21 +1144,21 @@ impl<N: Nbits, Block: PrimInt> ops::Deref for NbitsVec<N, Block> {
         self.as_raw_slice()
     }
 }
-impl<N: Nbits, Block: PrimInt> ops::DerefMut for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> ops::DerefMut for NbitsVec<N, Block> {
     #[inline]
     fn deref_mut(&mut self) -> &mut [Block] {
         self.as_mut_raw_slice()
     }
 }
 
-impl<N: Nbits, Block: PrimInt + Hash> Hash for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt + Hash> Hash for NbitsVec<N, Block> {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         Hash::hash(&**self, state);
     }
 }
 
-impl<N: Nbits, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.len() == other.len() && self[..] == other[..]
@@ -1166,9 +1169,9 @@ impl<N: Nbits, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Nbits, Block: PrimInt> Eq for NbitsVec<N, Block> {}
+impl<N: Unsigned + NonZero, Block: PrimInt> Eq for NbitsVec<N, Block> {}
 
-impl<N: Nbits, Block: PrimInt> Clone for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> Clone for NbitsVec<N, Block> {
     fn clone(&self) -> Self {
         let mut new = Self::with_capacity(self.len());
         unsafe {
@@ -1179,13 +1182,13 @@ impl<N: Nbits, Block: PrimInt> Clone for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Nbits, Block: PrimInt> PartialOrd for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> PartialOrd for NbitsVec<N, Block> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         PartialOrd::partial_cmp(&**self, &**other)
     }
 }
 
-impl<N: Nbits, Block: PrimInt> Ord for NbitsVec<N, Block> {
+impl<N: Unsigned + NonZero, Block: PrimInt> Ord for NbitsVec<N, Block> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         Ord::cmp(&**self, &**other)
     }
@@ -1206,12 +1209,72 @@ macro_rules! nbits_set {
     )
 }
 
-nbits_set! {
-    (N1, 1),
-    (N2, 2),
-    (N3, 3),
-    (N4, 4)
-}
-
 #[cfg(test)]
 mod tests;
+
+#[cfg_attr(rustfmt, rustfmt_skip)]
+pub use typenum::consts::{
+    U1 as N1,
+    U2 as N2,
+    U3 as N3,
+    U4 as N4,
+    U5 as N5,
+    U6 as N6,
+    U7 as N7,
+    U8 as N8,
+    U9 as N9,
+    U10 as N10,
+    U11 as N11,
+    U12 as N12,
+    U13 as N13,
+    U14 as N14,
+    U15 as N15,
+    U16 as N16,
+    U17 as N17,
+    U18 as N18,
+    U19 as N19,
+    U20 as N20,
+    U21 as N21,
+    U22 as N22,
+    U23 as N23,
+    U24 as N24,
+    U25 as N25,
+    U26 as N26,
+    U27 as N27,
+    U28 as N28,
+    U29 as N29,
+    U30 as N30,
+    U31 as N31,
+    U32 as N32,
+    U33 as N33,
+    U34 as N34,
+    U35 as N35,
+    U36 as N36,
+    U37 as N37,
+    U38 as N38,
+    U39 as N39,
+    U40 as N40,
+    U41 as N41,
+    U42 as N42,
+    U43 as N43,
+    U44 as N44,
+    U45 as N45,
+    U46 as N46,
+    U47 as N47,
+    U48 as N48,
+    U49 as N49,
+    U50 as N50,
+    U51 as N51,
+    U52 as N52,
+    U53 as N53,
+    U54 as N54,
+    U55 as N55,
+    U56 as N56,
+    U57 as N57,
+    U58 as N58,
+    U59 as N59,
+    U60 as N60,
+    U61 as N61,
+    U62 as N62,
+    U63 as N63,
+};
