@@ -77,8 +77,14 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// # }
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Constructor will panic if the `Block` unit bits is smaller than `N`bits.
+    /// This should panic in `new`, `with_capacity`, `from_raw_parts` methods.
     #[inline]
     pub fn new() -> Self {
+        Self::check_if_n_valid();
         NbitsVec {
             buf: RawVec::new(),
             len: 0,
@@ -102,7 +108,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert!(vec.capacity() >= 10);
     /// # }
     /// ```
+    #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
+        Self::check_if_n_valid();
         NbitsVec {
             buf: RawVec::with_capacity(Self::capacity_to_buf(capacity)),
             len: 0,
@@ -111,6 +119,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     }
 
     pub unsafe fn from_raw_parts(ptr: *mut Block, length: usize, capacity: usize) -> Self {
+        Self::check_if_n_valid();
         NbitsVec {
             buf: RawVec::from_raw_parts(ptr, Self::capacity_to_buf(capacity)),
             len: length,
@@ -1093,6 +1102,13 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     fn unit_bits() -> usize {
         N::to_usize()
+    }
+
+    #[inline]
+    fn check_if_n_valid() {
+        if Self::unit_bits() > Self::buf_unit_bits() {
+            panic!("`N` should be less than block's bits count, while your expect storing `{}`bits in a `{}`bits block vector", Self::unit_bits(), Self::buf_unit_bits());
+        }
     }
 }
 

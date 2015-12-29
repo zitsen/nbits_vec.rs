@@ -102,3 +102,41 @@ generate_test! {
     (n3 N3 => u8 u16 u32 u64 usize)
     (n4 N4 => u8 u16 u32 u64 usize)
 }
+
+macro_rules! panic_test {
+    ( $(($m: ident $nbits: ident => $($block: ident)*)) * ) => {
+        $(
+            mod $m {
+                $(
+                    mod $block {
+                        use ::{NbitsVec, $nbits};
+                        type NV = NbitsVec<$nbits, $block>;
+                        #[test]
+                        #[should_panic]
+                        fn panic_new() {
+                            NV::new();
+                        }
+                        #[test]
+                        #[should_panic]
+                        fn panic_with_capacity() {
+                            NV::with_capacity(10);
+                        }
+                        #[test]
+                        #[should_panic]
+                        fn panic_from_raw_parts() {
+                            unsafe {
+                                NV::from_raw_parts(::std::ptr::null_mut(), 0, 0);
+                            }
+                        }
+                    }
+                 )*
+            }
+         )*
+    }
+}
+
+panic_test! {
+    (n9 N9 => u8)
+    (n17 N17 => u8 u16)
+    (n33 N33 => u8 u16 u32)
+}
