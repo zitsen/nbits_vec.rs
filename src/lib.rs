@@ -509,11 +509,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # use raw_nbits_vec::*;
     /// # fn main() {
     /// let vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
-    /// assert_eq!(vec.raw_bits(), std::mem::size_of::<usize>() * 8);
+    /// assert_eq!(vec.cap_bits(), std::mem::size_of::<usize>() * 8);
     /// # }
     /// ```
     #[inline]
-    pub fn raw_bits(&self) -> usize {
+    pub fn cap_bits(&self) -> usize {
         self.raw_cap() * Self::block_bits()
     }
 
@@ -930,7 +930,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if Self::is_aligned() || Self::bit_offset(offset) < Self::bit_offset(offset + length) {
             self.set_block_bits(offset, length, value);
         } else {
-            (offset..cmp::min(offset + length, self.raw_bits()))
+            (offset..cmp::min(offset + length, self.cap_bits()))
                 .fold(value, | v, x| {
                     self.set_buf_unit_bit(x, v & Block::one() == Block::one());
                     v >> 1
@@ -947,7 +947,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             }
             _ => {
                 let mut v = value;
-                for x in offset..cmp::min(offset + length, self.raw_bits()) {
+                for x in offset..cmp::min(offset + length, self.cap_bits()) {
                     self.set_buf_unit_bit(x, v & Block::one() == Block::one());
                     v = v >> 1;
                 }
@@ -1063,7 +1063,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if Self::is_aligned() || Self::bit_offset(pos) < Self::bit_offset(pos + length) {
             return self.get_block_bits(pos, length);
         } else {
-            (pos..cmp::min(pos + length, self.raw_bits()))
+            (pos..cmp::min(pos + length, self.cap_bits()))
                     .map(|x| self.get_raw_bit(x))
                     .rev()
                     .fold(Block::zero(), |v, x| v << 1 | x)
