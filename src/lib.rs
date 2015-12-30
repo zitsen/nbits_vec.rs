@@ -776,18 +776,18 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         };
         let (start, end) = Self::loc_range(index, length);
 
-        if start.offset == 0 && end.offset == 0 {
-            write_buf(start.index, end.index)
-        } else if start.offset == 0 {
-            write_buf(start.index, end.index);
-            self.set_block_bits(end.index * block_bits, end.offset, item);
-        } else if end.offset == 0 {
-            self.set_block_bits(index * nbits, block_bits - start.offset, item);
-            write_buf(start.index + 1, end.index);
+        if start.1 == 0 && end.1 == 0 {
+            write_buf(start.0, end.0)
+        } else if start.1 == 0 {
+            write_buf(start.0, end.0);
+            self.set_block_bits(end.0 * block_bits, end.1, item);
+        } else if end.1 == 0 {
+            self.set_block_bits(index * nbits, block_bits - start.1, item);
+            write_buf(start.0 + 1, end.0);
         } else {
-            self.set_block_bits(index * nbits, block_bits - start.offset, item);
-            self.set_block_bits(end.index * block_bits, end.offset, item);
-            write_buf(start.index + 1, end.index);
+            self.set_block_bits(index * nbits, block_bits - start.1, item);
+            self.set_block_bits(end.0 * block_bits, end.1, item);
+            write_buf(start.0 + 1, end.0);
         }
     }
 
@@ -959,13 +959,13 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     unsafe fn set_block_bits(&mut self, offset: usize, length: usize, value: Block) {
         let loc = Self::bit_loc(offset);
-        let mask = (loc.offset..)
+        let mask = (loc.1..)
                        .take(length)
                        .fold(Block::zero(), |mask, _x| mask << 1 | Block::one()) <<
-                   loc.offset;
-        let ptr = self.buf.ptr().offset(loc.index as isize);
+                   loc.1;
+        let ptr = self.buf.ptr().offset(loc.0 as isize);
         let cur = ptr::read(ptr);
-        let new = mask & (value << loc.offset);
+        let new = mask & (value << loc.1);
         let old = mask & cur;
         if old != new {
             ptr::write(ptr, cur & !mask | new);
@@ -976,10 +976,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     unsafe fn set_buf_unit_bit(&mut self, offset: usize, bit: bool) {
         let loc = Self::bit_loc(offset);
-        let mask = Block::one() << loc.offset;
-        let ptr = self.buf.ptr().offset(loc.index as isize);
+        let mask = Block::one() << loc.1;
+        let ptr = self.buf.ptr().offset(loc.0 as isize);
         let cur = ptr::read(ptr);
-        let old = cur >> loc.offset & Block::one();
+        let old = cur >> loc.1 & Block::one();
         match (old == Block::one(), bit) {
             (lhs, rhs) if lhs == rhs => (),
             (_, true) => ptr::write(ptr, cur | mask),
@@ -1075,27 +1075,27 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     unsafe fn get_raw_bit(&self, pos: usize) -> Block {
         let loc = Self::bit_loc(pos);
-        let ptr = self.buf.ptr().offset(loc.index as isize);
-        ptr::read(ptr) >> loc.offset & Block::one()
+        let ptr = self.buf.ptr().offset(loc.0 as isize);
+        ptr::read(ptr) >> loc.1 & Block::one()
     }
 
     /// Get buf `length` bits of unit at `index`th unit's `offset`th bit
     #[inline]
     unsafe fn get_block_bits(&self, offset: usize, length: usize) -> Block {
         let loc = Self::bit_loc(offset);
-        let ptr = self.buf.ptr().offset(loc.index as isize);
+        let ptr = self.buf.ptr().offset(loc.0 as isize);
         let unit = Self::block_bits();
-        (ptr::read(ptr) << (unit - loc.offset - length)) >> (unit - length)
+        (ptr::read(ptr) << (unit - loc.1 - length)) >> (unit - length)
     }
 
     /// Used capacity in `RawVec`.
     #[inline]
     fn used_raw_cap(&self) -> usize {
         let loc = Self::bit_loc(self.bits());
-        if loc.offset == 0 {
-            loc.index
+        if loc.1 == 0 {
+            loc.0
         } else {
-            loc.index + 1
+            loc.0 + 1
         }
     }
 
@@ -1121,10 +1121,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     fn raw_cap_from(cap: usize) -> usize {
         let loc = Self::loc(cap);
-        if loc.offset == 0 {
-            loc.index
+        if loc.1 == 0 {
+            loc.0
         } else {
-            loc.index + 1
+            loc.0 + 1
         }
     }
 
@@ -1137,7 +1137,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Converts the vector index to buf `(index, offset)` tuple.
     #[inline]
     fn loc(index: usize) -> Loc {
-        Loc::from_unit(index * Self::nbits(), Self::block_bits())
+        let bits = index * Self::nbits();
+        let rbits = Self::block_bits();
+        (bits / rbits, bits % rbits)
     }
 
     /// Converts the vector index range to buf `(index, offset)` range tuple.
@@ -1149,7 +1151,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Converts bit index to buf `BitLoc`.
     #[inline]
     fn bit_loc(bit: usize) -> BitLoc {
-        BitLoc::from_unit(bit, Self::block_bits())
+        let rbits = Self::block_bits();
+        (bit / rbits, bit % rbits)
     }
 
     #[inline]
@@ -1182,27 +1185,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-struct Loc {
-    index: usize,
-    offset: usize,
-}
-
-impl Loc {
-    fn new(index: usize, offset: usize) -> Self {
-        Loc {
-            index: index,
-            offset: offset,
-        }
-    }
-    fn from_unit(loc: usize, unit: usize) -> Self {
-        Loc {
-            index: loc / unit,
-            offset: loc % unit,
-        }
-    }
-}
-
+type Loc = (usize, usize);
 type BitLoc = Loc;
 
 impl<N: Unsigned + NonZero, Block: PrimInt> Default for NbitsVec<N, Block> {

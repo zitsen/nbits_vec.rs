@@ -5,7 +5,7 @@ macro_rules! generate_test {
                 $(
                     mod $block {
                         mod struct_static {
-                            use ::{NbitsVec, $nbits, Loc};
+                            use ::{NbitsVec, $nbits};
                             use ::std::mem::size_of;
                             type NV = NbitsVec<$nbits, $block>;
                             #[test]
@@ -18,12 +18,12 @@ macro_rules! generate_test {
                             }
                             #[test]
                             fn bit_loc() {
-                                assert_eq!(NV::bit_loc(0), Loc::new(0, 0));
-                                assert_eq!(NV::bit_loc(1), Loc::new(0, 1));
+                                assert_eq!(NV::bit_loc(0), (0, 0));
+                                assert_eq!(NV::bit_loc(1), (0, 1));
                                 let block_bits = NV::block_bits();
                                 for i in 3..79 {
                                     assert_eq!(NV::bit_loc(i),
-                                                Loc::new(i / block_bits, i % block_bits));
+                                                (i / block_bits, i % block_bits));
                                 }
                             }
                         }
