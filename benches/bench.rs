@@ -88,7 +88,7 @@ mod tests {
                             let n = test::black_box(1000);
                             let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::with_capacity(n);
                             b.iter(|| {
-                                for i in 0..n {
+                                for _i in 0..n {
                                     vec.push(1);
                                 }
                             });
