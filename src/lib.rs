@@ -24,7 +24,6 @@ extern crate typenum;
 use alloc::raw_vec::RawVec;
 use num::PrimInt;
 use std::cmp;
-use std::ops;
 use std::fmt::{self, Debug};
 use std::hash::{self, Hash};
 use std::mem;
@@ -138,7 +137,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// fn main() {
     ///     let mut v: NbitsVec<N2> = NbitsVec::with_capacity(10);
     ///     v.push(1); v.push(2); v.push(3);
-    ///     let p = v.as_mut_ptr();
+    ///     let p = v.raw_mut_ptr();
     ///     let len = v.len();
     ///     let cap = v.capacity();
     ///     unsafe {
@@ -281,28 +280,6 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if self.len() > len {
             self.len = len;
             self.shrink_to_fit();
-        }
-    }
-    pub fn as_raw_slice(&self) -> &[Block] {
-        unsafe {
-            let p = self.buf.ptr();
-            debug_assert!(!p.is_null());
-            slice::from_raw_parts(p, self.used_raw_cap())
-        }
-    }
-    pub fn as_mut_raw_slice(&mut self) -> &mut [Block] {
-        unsafe {
-            let p = self.buf.ptr();
-            debug_assert!(!p.is_null());
-            slice::from_raw_parts_mut(p, self.used_raw_cap())
-        }
-    }
-    pub fn into_raw_boxed_slice(mut self) -> Box<[Block]> {
-        unsafe {
-            self.shrink_to_fit();
-            let buf = ptr::read(&self.buf);
-            mem::forget(self);
-            buf.into_box()
         }
     }
 
@@ -1071,6 +1048,49 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         (ptr::read(ptr) << (unit - loc.1 - length)) >> (unit - length)
     }
 
+    /// Returns mutable ptr of `Block`.
+    #[inline]
+    pub fn raw_mut_ptr(&mut self) -> *mut Block {
+        self.buf.ptr()
+    }
+
+    /// Returns ptr of `Block`.
+    #[inline]
+    pub fn raw_ptr(&self) -> *const Block {
+        self.buf.ptr()
+    }
+
+    /// Return raw slice of `Block`.
+    #[inline]
+    pub fn as_raw_slice(&self) -> &[Block] {
+        unsafe {
+            let p = self.buf.ptr();
+            debug_assert!(!p.is_null());
+            slice::from_raw_parts(p, self.used_raw_cap())
+        }
+    }
+
+    /// Returns mutable raw slice of `Block`.
+    #[inline]
+    pub fn as_mut_raw_slice(&mut self) -> &mut [Block] {
+        unsafe {
+            let p = self.buf.ptr();
+            debug_assert!(!p.is_null());
+            slice::from_raw_parts_mut(p, self.used_raw_cap())
+        }
+    }
+
+    /// Returns raw boxed slice of `Block`.
+    #[inline]
+    pub fn into_raw_boxed_slice(mut self) -> Box<[Block]> {
+        unsafe {
+            self.shrink_to_fit();
+            let buf = ptr::read(&self.buf);
+            mem::forget(self);
+            buf.into_box()
+        }
+    }
+
     /// Used capacity in `RawVec`.
     #[inline]
     fn used_raw_cap(&self) -> usize {
@@ -1198,36 +1218,21 @@ impl<N: Unsigned + NonZero, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N
     }
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt> ops::Deref for NbitsVec<N, Block> {
-    type Target = [Block];
-
-    #[inline]
-    fn deref(&self) -> &[Block] {
-        self.as_raw_slice()
-    }
-}
-impl<N: Unsigned + NonZero, Block: PrimInt> ops::DerefMut for NbitsVec<N, Block> {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut [Block] {
-        self.as_mut_raw_slice()
-    }
-}
-
 impl<N: Unsigned + NonZero, Block: PrimInt + Hash> Hash for NbitsVec<N, Block> {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        Hash::hash(&**self, state);
+        Hash::hash(self.as_raw_slice(), state);
     }
 }
 
 impl<N: Unsigned + NonZero, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.len() == other.len() && self[..] == other[..]
+        self.len() == other.len() && self.as_raw_slice() == other.as_raw_slice()
     }
     #[inline]
     fn ne(&self, other: &Self) -> bool {
-        self.len() != other.len() || self[..] != other[..]
+        self.len() != other.len() || self.as_raw_slice() == other.as_raw_slice()
     }
 }
 
@@ -1246,13 +1251,13 @@ impl<N: Unsigned + NonZero, Block: PrimInt> Clone for NbitsVec<N, Block> {
 
 impl<N: Unsigned + NonZero, Block: PrimInt> PartialOrd for NbitsVec<N, Block> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        PartialOrd::partial_cmp(&**self, &**other)
+        PartialOrd::partial_cmp(self.as_raw_slice(), other.as_raw_slice())
     }
 }
 
 impl<N: Unsigned + NonZero, Block: PrimInt> Ord for NbitsVec<N, Block> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
-        Ord::cmp(&**self, &**other)
+        Ord::cmp(self.as_raw_slice(), other.as_raw_slice())
     }
 }
 
