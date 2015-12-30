@@ -836,7 +836,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             panic!("attempt to set bit out of bounds");
         }
         unsafe {
-            self.set_buf_unit_bit(index, bit);
+            self.set_raw_bit(index, bit);
         }
     }
 
@@ -920,7 +920,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                    buf_unit);
         }
         if length == 1 {
-            return self.set_buf_unit_bit(offset, value & Block::one() == Block::one());
+            return self.set_raw_bit(offset, value & Block::one() == Block::one());
         }
         if Self::is_packed() {
             let ptr = self.buf.ptr().offset(Self::bit_index(offset) as isize);
@@ -932,27 +932,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         } else {
             (offset..cmp::min(offset + length, self.cap_bits()))
                 .fold(value, | v, x| {
-                    self.set_buf_unit_bit(x, v & Block::one() == Block::one());
+                    self.set_raw_bit(x, v & Block::one() == Block::one());
                     v >> 1
                 });
         }
-        /*
-        match Self::nbits() {
-            unit if unit == buf_unit => {
-                // NOTE: maybe unreachable!() is better.
-                self.set_block_bits(offset, length, value);
-            }
-            unit if unit < buf_unit && buf_unit % unit == 0 => {
-                self.set_block_bits(offset, length, value);
-            }
-            _ => {
-                let mut v = value;
-                for x in offset..cmp::min(offset + length, self.cap_bits()) {
-                    self.set_buf_unit_bit(x, v & Block::one() == Block::one());
-                    v = v >> 1;
-                }
-            }
-        }*/
     }
 
     /// Set buf element of `index` at offset `from` to `to` as `value`.
@@ -974,7 +957,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Set buf unit bit at `index`th unit of `offset`bit.
     #[inline]
-    unsafe fn set_buf_unit_bit(&mut self, offset: usize, bit: bool) {
+    unsafe fn set_raw_bit(&mut self, offset: usize, bit: bool) {
         let loc = Self::bit_loc(offset);
         let mask = Block::one() << loc.1;
         let ptr = self.buf.ptr().offset(loc.0 as isize);
