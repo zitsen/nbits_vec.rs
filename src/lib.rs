@@ -29,6 +29,7 @@ use std::hash::{self, Hash};
 use std::mem;
 use std::ptr;
 use std::slice;
+use std::ops::{BitAnd, BitOr, Shr, Shl};
 use std::marker::{PhantomData, Send, Sync};
 use typenum::NonZero;
 use typenum::uint::Unsigned;
@@ -889,29 +890,89 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn set_raw_bits(&mut self, offset: usize, length: usize, value: Block) {
-        let buf_unit = Self::block_bits();
-        if length > buf_unit {
-            panic!("set {} buf bits longer than buf unit bits {}",
-                   length,
-                   buf_unit);
+    pub unsafe fn set_raw_bits(&mut self, pos: usize, length: usize, value: Block) {
+        let block_bits = Self::block_bits();
+        let loc = Self::bit_loc(pos);
+        debug_assert!(length > 0 && length <= block_bits);
+        // 1. Index out of bounds, but without panics or warnigns.
+        if loc.0 >= self.raw_cap() {
+            println!("index out of bounds");
+            return;
         }
+
+        let ptr = self.raw_mut_ptr().offset(loc.0 as isize);
+        let ori = ptr::read(ptr);
+
+        // 2. One bit only.
         if length == 1 {
-            return self.set_raw_bit(offset, value & Block::one() == Block::one());
+            let mask = Block::one() << loc.1;
+            let old = (ori >> loc.1) & Block::one();
+            let new = value & Block::one();
+            if old != new {
+                if new == Block::one() {
+                    ptr::write(ptr, ori | mask)
+                } else {
+                    ptr::write(ptr, !mask & ori)
+                }
+            }
+            return;
         }
-        if Self::is_packed() {
-            let ptr = self.buf.ptr().offset(Self::bit_index(offset) as isize);
+
+        // 3. If request pos and length is packed.
+        if length == block_bits && loc.1 == 0 {
             ptr::write(ptr, value);
             return;
         }
-        if Self::is_aligned() || Self::bit_offset(offset) < Self::bit_offset(offset + length) {
-            self.set_block_bits(offset, length, value);
-        } else {
-            (offset..cmp::min(offset + length, self.cap_bits()))
-                .fold(value, | v, x| {
-                    self.set_raw_bit(x, v & Block::one() == Block::one());
-                    v >> 1
-                });
+
+        let remain = block_bits - length;
+        // Value mask
+        let mask = !Block::zero() >> remain;
+        // 4.0. At the begining of the block
+        if loc.1 == 0 {
+            let new = value & mask | (ori & !mask);
+            if ori != new {
+                ptr::write(ptr, new);
+            }
+            return;
+        }
+        // 4.1 In current index which request to the raw value bits end.
+        let end_off = (loc.1 + length) % block_bits;
+        if end_off == 0 {
+            let new = ((value & mask) << loc.1) | (ori & (!mask >> length));
+            if ori != new {
+                ptr::write(ptr, new);
+            }
+            return;
+        }
+        // 4.2 In current index but only selected bits.
+        if end_off > loc.1 {
+            let new = ori & !(mask << loc.1) | ((value & mask) << loc.1);
+            if ori != new {
+                ptr::write(ptr, new);
+            }
+            return;
+        }
+        // 5.1 Request for next block but out of bounds.
+        if self.raw_cap() == loc.0 + 1 {
+            let new = ((value & mask) << loc.1) | (ori & (!mask >> (block_bits - loc.1)) );
+            if ori != new {
+                ptr::write(ptr, new);
+            }
+            return;
+        }
+
+        // 5.3 No other condition should care.
+        let new = Block::zero().not().shr(block_bits - loc.1).bitand(ori).bitor(value.shl(loc.1));
+        if ori != new {
+            ptr::write(ptr, new);
+        }
+        let ptr = ptr.offset(1);
+        let ori = ptr::read(ptr);
+        let remain = block_bits - end_off;
+        let mask = Block::zero().not().shr(remain);
+        let new = value.shr(length - end_off).bitand(mask).bitor(mask.not().bitand(ori));
+        if ori != new {
+            ptr::write(ptr, new);
         }
     }
 
@@ -935,16 +996,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Set buf unit bit at `index`th unit of `offset`bit.
     #[inline]
     unsafe fn set_raw_bit(&mut self, offset: usize, bit: bool) {
-        let loc = Self::bit_loc(offset);
-        let mask = Block::one() << loc.1;
-        let ptr = self.buf.ptr().offset(loc.0 as isize);
-        let cur = ptr::read(ptr);
-        let old = cur >> loc.1 & Block::one();
-        match (old == Block::one(), bit) {
-            (lhs, rhs) if lhs == rhs => (),
-            (_, true) => ptr::write(ptr, cur | mask),
-            (_, false) => ptr::write(ptr, cur & !mask),
-        }
+        self.set_raw_bits(offset, 1, if bit { Block::one() } else { Block::zero() })
     }
 
     /// Get `N` bits value as `B`.
@@ -1007,42 +1059,56 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub unsafe fn get_raw_bits(&self, pos: usize, length: usize) -> Block {
-        let block_bits = Self::block_bits();
-        if length > block_bits {
-            panic!("get {} buf bits longer than buf unit bits {}",
-                   length,
-                   block_bits);
+        debug_assert!(length > 0 && length <= Self::block_bits());
+        let loc = Self::bit_loc(pos);
+        // 1. Index out of bounds, but without panics or warnigns.
+        if loc.0 >= self.raw_cap() {
+            return Block::zero();
         }
+        let ptr = self.raw_ptr().offset(loc.0 as isize);
+        // 2. One bit only.
         if length == 1 {
-            return self.get_raw_bit(pos);
+            return ptr::read(ptr) >> loc.1 & Block::one();
         }
-        if Self::is_packed() {
-            let ptr = self.buf.ptr().offset(Self::bit_index(pos) as isize);
+        let block_bits = Self::block_bits();
+        // 3. If request pos and length is packed.
+        if length == block_bits && loc.1 == 0 {
             return ptr::read(ptr);
         }
-        if Self::is_aligned() || Self::bit_offset(pos) < Self::bit_offset(pos + length) {
-            return self.get_block_bits(pos, length);
-        } else {
-            (pos..cmp::min(pos + length, self.cap_bits()))
-                    .map(|x| self.get_raw_bit(x))
-                    .rev()
-                    .fold(Block::zero(), |v, x| v << 1 | x)
-
+        let end_off = (loc.1 + length) % block_bits;
+        // 4.1 In current index which request to the raw value bits end.
+        if end_off == 0 {
+            return ptr::read(ptr) >> (block_bits - length);
         }
+        // 4.2 In current index but only selected bits.
+        if end_off > loc.1 {
+            return ptr::read(ptr) << (block_bits - end_off) >> (block_bits - length);
+        }
+        // 5. Request for next block.
+        //
+        // 5.1 Next block out of bounds.
+        if self.raw_cap() == loc.0 + 1 {
+            return ptr::read(ptr) >> loc.1;
+        }
+        // 5.2 Request length is fullfill the block, so we cut current left and next right
+        //     for the new value.
+        if length == block_bits {
+            return ptr::read(ptr) >> loc.1 | (ptr::read(ptr.offset(1)) << (block_bits - loc.1));
+        }
+        // 5.3. No other condition should care.
+        let e = block_bits - end_off;
+        (ptr::read(ptr) >> loc.1) | (ptr::read(ptr.offset(1)) << e >> (block_bits - length))
     }
 
     /// Get raw bit at `pos`.
     #[inline]
     unsafe fn get_raw_bit(&self, pos: usize) -> Block {
-        let loc = Self::bit_loc(pos);
-        let ptr = self.buf.ptr().offset(loc.0 as isize);
-        ptr::read(ptr) >> loc.1 & Block::one()
+        self.get_raw_bits(pos, 1)
     }
 
     /// Get buf `length` bits of unit at `index`th unit's `offset`th bit
     #[inline]
-    unsafe fn get_block_bits(&self, offset: usize, length: usize) -> Block {
-        let loc = Self::bit_loc(offset);
+    unsafe fn get_block_bits(&self, loc: (usize, usize), length: usize) -> Block {
         let ptr = self.buf.ptr().offset(loc.0 as isize);
         let unit = Self::block_bits();
         (ptr::read(ptr) << (unit - loc.1 - length)) >> (unit - length)

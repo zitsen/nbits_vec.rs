@@ -27,6 +27,66 @@ macro_rules! generate_test {
                                 }
                             }
                         }
+                        mod private_api {
+                            use ::{NbitsVec, $nbits};
+                            use num::{Zero, One};
+                            type NV = NbitsVec<$nbits, $block>;
+
+                            fn mask(n: usize) -> $block {
+                                (0..n).fold($block::zero(), |b, _x| b << 1 | $block::one())
+                            }
+
+                            #[test]
+                            fn raw_bit() {
+                                let mut vec = NV::with_capacity(100);
+                                unsafe {
+                                    for i in 0..(100 * NV::nbits()) {
+                                        vec.set_raw_bit(i, true);
+                                        assert_eq!(vec.get_raw_bit(i), 0b1);
+                                        vec.set_raw_bit(i, false);
+                                        assert_eq!(vec.get_raw_bit(i), 0b0);
+                                    }
+                                }
+                            }
+
+                            #[test]
+                            fn raw_bits() {
+                                let mut vec = NV::with_capacity(100);
+                                unsafe {
+                                    for n in 2..8 {
+                                        for i in 0..(100 * NV::nbits() - n) {
+                                            vec.set_raw_bits(i, n, 0b1001);
+                                            println!("N = {}, i = {}", n, i);
+                                            vec.get_raw_bits(i, n);
+                                            assert_eq!(vec.get_raw_bits(i, n), 0b1001 & mask(n));
+                                        }
+                                        for i in 0..n {
+                                            let j = 100 * NV::nbits() - i;
+                                            vec.get_raw_bits(j, n);
+                                        }
+                                    }
+                                }
+                            }
+
+                            #[test]
+                            fn get_raw_bits() {
+                                let vec = NV::with_capacity(100);
+                                unsafe {
+                                    vec.get_raw_bits(1, 1);
+                                    vec.get_raw_bits(2, 2);
+                                    vec.get_raw_bits(3, 3);
+                                }
+                            }
+                            #[cfg(build = "debug")]
+                            #[test]
+                            #[should_panic]
+                            fn failed_get_raw_bits() {
+                                let vec = NV::with_capacity(100);
+                                unsafe {
+                                    vec.get_raw_bits(0, 100);
+                                }
+                            }
+                        }
                         mod public_api {
                             use ::{NbitsVec, $nbits};
                             type NV = NbitsVec<$nbits, $block>;
