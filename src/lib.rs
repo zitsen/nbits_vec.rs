@@ -29,7 +29,7 @@ use std::hash::{self, Hash};
 use std::mem;
 use std::ptr;
 use std::slice;
-use std::ops::{BitAnd, BitOr, Shr, Shl};
+use std::ops::{BitAnd, BitOr, Shl, Shr};
 use std::marker::{PhantomData, Send, Sync};
 use typenum::NonZero;
 use typenum::uint::Unsigned;
@@ -743,8 +743,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             return;
         }
         // if aligned
-        let item = (0..).take(block_cap)
-            .fold(Block::zero(), |v, _x| v << nbits | value);
+        let item = (0..)
+                       .take(block_cap)
+                       .fold(Block::zero(), |v, _x| v << nbits | value);
         let ptr = self.buf.ptr();
         let write_buf = |start: usize, end: usize| {
             (start..end).fold(ptr.offset(start as isize), |ptr, _x| {
@@ -814,7 +815,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                 let mask = Self::mask();
                 let ptr = self.buf.ptr().offset(bi as isize);
                 let ori = ptr::read(ptr);
-                let new = Block::zero().not().shr(block_bits - bo).bitand(ori).bitor(value.bitand(mask).shl(bo));
+                let new = Block::zero()
+                              .not()
+                              .shr(block_bits - bo)
+                              .bitand(ori)
+                              .bitor(value.bitand(mask).shl(bo));
                 if ori != new {
                     ptr::write(ptr, new);
                 }
@@ -927,7 +932,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
         // 5.1 Request for next block but out of bounds.
         if self.raw_cap() == loc.0 + 1 {
-            let new = ((value & mask) << loc.1) | (ori & (!mask >> (block_bits - loc.1)) );
+            let new = ((value & mask) << loc.1) | (ori & (!mask >> (block_bits - loc.1)));
             if ori != new {
                 ptr::write(ptr, new);
             }
@@ -1018,7 +1023,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             } else if bo < bo2 {
                 ptr::read(ptr) << (block_bits - bo2) >> (block_bits - nbits)
             } else {
-                (ptr::read(ptr) >> bo) | (ptr::read(ptr.offset(1)) << (block_bits - bo2) >> (block_bits - nbits))
+                (ptr::read(ptr) >> bo) |
+                (ptr::read(ptr.offset(1)) << (block_bits - bo2) >> (block_bits - nbits))
             }
         }
     }
@@ -1254,7 +1260,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     fn check_if_n_valid() {
         if Self::nbits() > Self::block_bits() {
-            panic!("`N` should be less than block's bits count, while your expect storing `{}`bits in a `{}`bits block vector", Self::nbits(), Self::block_bits());
+            panic!("`N` should be less than block's bits count, while your expect storing \
+                    `{}`bits in a `{}`bits block vector",
+                   Self::nbits(),
+                   Self::block_bits());
         }
     }
 }
@@ -1332,9 +1341,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> Ord for NbitsVec<N, Block> {
     }
 }
 
-unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Send for NbitsVec<N, Block> { }
+unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Send for NbitsVec<N, Block> {}
 
-unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Sync for NbitsVec<N, Block> { }
+unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Sync for NbitsVec<N, Block> {}
 
 #[cfg_attr(rustfmt, rustfmt_skip)]
 pub use typenum::consts::{
