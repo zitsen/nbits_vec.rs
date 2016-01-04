@@ -1002,8 +1002,25 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                    index,
                    self.len);
         }
-        let unit = Self::nbits();
-        unsafe { self.get_raw_bits(index * unit, unit) }
+        let nbits = Self::nbits();
+        let bit_pos = index * nbits;
+        let bi = Self::bit_index(bit_pos);
+        let bo = Self::bit_offset(bit_pos);
+        unsafe {
+            let ptr = self.raw_ptr().offset(bi as isize);
+            if nbits == 1 {
+                return ptr::read(ptr) >> bo & Block::one();
+            }
+            let bo2 = Self::bit_offset(bit_pos + nbits);
+            let block_bits = Self::block_bits();
+            if bo2 == 0 {
+                ptr::read(ptr) >> (block_bits - nbits)
+            } else if bo < bo2 {
+                ptr::read(ptr) << (block_bits - bo2) >> (block_bits - nbits)
+            } else {
+                (ptr::read(ptr) >> bo) | (ptr::read(ptr.offset(1)) << (block_bits - bo2) >> (block_bits - nbits))
+            }
+        }
     }
 
     /// Get `length` bits of buf at `offset`th bit.
