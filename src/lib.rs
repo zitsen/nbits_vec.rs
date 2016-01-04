@@ -787,8 +787,44 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             panic!("attempt to set at {} but only {}", index, self.len);
         }
         unsafe {
-            let unit = Self::nbits();
-            self.set_raw_bits(index * unit, unit, value);
+            let nbits = Self::nbits();
+            let offset = index * nbits;
+            if nbits == 1 {
+                self.set_raw_bit(offset, value & Block::one() == Block::one());
+                return;
+            }
+            let bi = Self::bit_index(offset);
+            if Self::is_packed() {
+                let ptr = self.buf.ptr().offset(bi as isize);
+                ptr::write(ptr, value);
+                return;
+            }
+            let bo = Self::bit_offset(offset);
+            let bo2 = Self::bit_offset(offset + nbits);
+            let block_bits = Self::block_bits();
+            if Self::is_aligned() || bo < bo2 || bo2 == 0 {
+                let mask = Self::mask();
+                let ptr = self.buf.ptr().offset(bi as isize);
+                let ori = ptr::read(ptr);
+                let new = ori & !(mask << bo) | ((value & mask) << bo);
+                if ori != new {
+                    ptr::write(ptr, new);
+                }
+            } else {
+                let mask = Self::mask();
+                let ptr = self.buf.ptr().offset(bi as isize);
+                let ori = ptr::read(ptr);
+                let new = Block::zero().not().shr(block_bits - bo).bitand(ori).bitor(value.bitand(mask).shl(bo));
+                if ori != new {
+                    ptr::write(ptr, new);
+                }
+                let ptr = ptr.offset(1);
+                let ori = ptr::read(ptr);
+                let new = value.shr(nbits - bo2).bitand(mask).bitor(mask.not().bitand(ori));
+                if ori != new {
+                    ptr::write(ptr, new);
+                }
+            }
         }
     }
 
@@ -932,7 +968,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Set buf unit bit at `index`th unit of `offset`bit.
     #[inline]
-    unsafe fn set_raw_bit(&mut self, offset: usize, bit: bool) {
+    pub unsafe fn set_raw_bit(&mut self, offset: usize, bit: bool) {
         self.set_raw_bits(offset, 1, if bit { Block::one() } else { Block::zero() })
     }
 
@@ -981,7 +1017,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// vec.resize(10, 0);
     /// println!("{:?}", vec);
     /// for i in 0..8 {
-    ///     vec.set_bit(i, if i % 2 == 0 { true } else { false });
+    ///     unsafe { vec.set_raw_bit(i, if i % 2 == 0 { true } else { false }); }
     /// }
     /// println!("{:?}", vec);
     /// unsafe {
@@ -1039,7 +1075,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Get raw bit at `pos`.
     #[inline]
-    unsafe fn get_raw_bit(&self, pos: usize) -> Block {
+    pub unsafe fn get_raw_bit(&self, pos: usize) -> Block {
         self.get_raw_bits(pos, 1)
     }
 
@@ -1181,6 +1217,12 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     pub fn nbits() -> usize {
         N::to_usize()
+    }
+
+    /// Bit mask.
+    #[inline]
+    fn mask() -> Block {
+        Block::zero().not().shr(Self::block_bits() - Self::nbits())
     }
 
     #[inline]

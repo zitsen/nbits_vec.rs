@@ -4,18 +4,28 @@ macro_rules! generate_test {
             mod $m {
                 $(
                     mod $block {
+                        use num::{Zero, One};
+                        use ::{NbitsVec, $nbits};
+                        type NV = NbitsVec<$nbits, $block>;
+
+                        fn mask(n: usize) -> $block {
+                            (0..n).fold($block::zero(), |b, _x| b << 1 | $block::one())
+                        }
+
                         mod struct_static {
-                            use ::{NbitsVec, $nbits};
                             use ::std::mem::size_of;
-                            type NV = NbitsVec<$nbits, $block>;
+                            use super::{mask, NV};
+
                             #[test]
                             fn nbits() {
                                 assert!(NV::nbits() > 0);
                             }
+
                             #[test]
                             fn block_bits() {
                                 assert_eq!(NV::block_bits(), size_of::<$block>() * 8);
                             }
+
                             #[test]
                             fn bit_loc() {
                                 assert_eq!(NV::bit_loc(0), (0, 0));
@@ -26,15 +36,15 @@ macro_rules! generate_test {
                                                 (i / block_bits, i % block_bits));
                                 }
                             }
+
+                            #[test]
+                            fn mask_ok() {
+                                assert_eq!(NV::mask(), mask(NV::nbits()));
+                            }
+
                         }
                         mod private_api {
-                            use ::{NbitsVec, $nbits};
-                            use num::{Zero, One};
-                            type NV = NbitsVec<$nbits, $block>;
-
-                            fn mask(n: usize) -> $block {
-                                (0..n).fold($block::zero(), |b, _x| b << 1 | $block::one())
-                            }
+                            use super::{mask, NV};
 
                             #[test]
                             fn raw_bit() {
@@ -77,6 +87,7 @@ macro_rules! generate_test {
                                     vec.get_raw_bits(3, 3);
                                 }
                             }
+
                             #[cfg(build = "debug")]
                             #[test]
                             #[should_panic]
@@ -88,8 +99,8 @@ macro_rules! generate_test {
                             }
                         }
                         mod public_api {
-                            use ::{NbitsVec, $nbits};
-                            type NV = NbitsVec<$nbits, $block>;
+                            use super::{NV};
+
                             #[test]
                             fn new() {
                                 let vec = NV::new();
