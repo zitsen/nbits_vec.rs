@@ -161,6 +161,39 @@ macro_rules! generate_test {
                                     assert_eq!(v, 0);
                                 }
                             }
+                            #[test]
+                            fn fill() {
+                                let mut vec = NV::new();
+                                vec.resize(1000, 0b11111);
+                                for i in 0..500 {
+                                    vec.fill(i, i, 0b111001 >> (i / 100));
+                                    for j in (i..).take(i) {
+                                        assert_eq!(vec.get(j), 0b111001 >> (i / 100) & NV::mask());
+                                    }
+                                }
+                            }
+                            #[test]
+                            fn align() {
+                                let mut vec = NV::new();
+                                println!("Align to right");
+                                vec.align(0, 100);
+                                assert_eq!(vec.len(), 100);
+                                vec.align(50, 950);
+                                assert_eq!(vec.len(), 1000);
+                                vec.align(900, 1900);
+                                assert_eq!(vec.len(), 2000);
+                                println!("Align to left");
+                                vec.align(987, 923);
+                                assert_eq!(vec.len(), 2000 - (987 - 923));
+                                vec.align(640, 576);
+                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64);
+                                vec.align(555, 444);
+                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64 - 111);
+                                vec.align(432, 319);
+                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64 - 111 - 113);
+                                vec.align(200, 0);
+                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64 - 111 - 113 - 200);
+                            }
                         }
 
                         mod threadsafe {
