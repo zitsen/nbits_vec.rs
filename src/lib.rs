@@ -590,8 +590,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
             let n = new_len - len;
             self.reserve_exact(n);
             unsafe {
-                self.fill_buf(len, n, value);
                 self.len = new_len;
+                self.fill(len, n, value);
             }
         } else {
             self.truncate(new_len);
@@ -607,8 +607,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// let mut vec: NbitsVec<N2, u8> = NbitsVec::new();
     /// vec.resize(24, 0);
     /// unsafe {
-    ///     vec.fill_buf(0, 12, 1);
-    ///     vec.fill_buf(12, 12, 2);
+    ///     vec.fill(0, 12, 1);
+    ///     vec.fill(12, 12, 2);
     /// }
     /// println!("{:?}", vec);
     /// // Left align will reduce the length.
@@ -677,8 +677,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                     let dst = to / unit_cap;
                     let count = len / unit_cap - src + 1;
                     ptr::copy(ptr.offset(src as isize), ptr.offset(dst as isize), count);
-                    self.fill_buf(offset, interval, Block::zero());
                     self.len = self.len() + interval;
+                    self.fill(offset, interval, Block::zero());
                 }
             } else {
                 self.len = len + interval;
@@ -687,17 +687,13 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                     self.set(offset + interval, value);
                 }
                 unsafe {
-                    self.fill_buf(offset, interval, Block::zero());
+                    self.fill(offset, interval, Block::zero());
                 }
             }
         }
     }
 
     /// Fill vector buf as `value` from `index` with size `length`.
-    ///
-    /// ## Unsafety
-    ///
-    /// The method doesnot check the index validation of the vector.
     ///
     /// ## Examples
     ///
@@ -709,64 +705,21 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// vec.resize(24, 0);
     /// println!("{:?}", vec);
     /// unsafe {
-    ///     vec.fill_buf(1, 2, 2); // length < buf_unit
+    ///     vec.fill(1, 2, 2); // length < buf_unit
     ///     assert!((1..).take(2).all(|x| vec.get(x) == 2));
-    ///     vec.fill_buf(0, 8, 1); // offset: 0, 0
+    ///     vec.fill(0, 8, 1); // offset: 0, 0
     ///     assert!((0..).take(8).all(|x| vec.get(x) == 1));
-    ///     vec.fill_buf(7, 10, 2); // offset: n, n
+    ///     vec.fill(7, 10, 2); // offset: n, n
     ///     assert!((7..).take(10).all(|x| vec.get(x) == 2));
-    ///     vec.fill_buf(8, 11, 1); // offset: 0,n
+    ///     vec.fill(8, 11, 1); // offset: 0,n
     ///     assert!((8..).take(11).all(|x| vec.get(x) == 1));
     /// }
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn fill_buf(&mut self, index: usize, length: usize, value: Block) {
-        // if packed
-        if Self::is_packed() {
-            for i in (index..).take(length) {
-                let ptr = self.buf.ptr().offset(i as isize);
-                ptr::write(ptr, value);
-            }
-            return;
-        }
-
-        let nbits = Self::nbits();
-        let block_bits = Self::block_bits();
-        let block_cap = block_bits / nbits;
-
-        // length too short or not aligned
-        if !Self::is_aligned() || length < block_cap {
-            for i in (index..).take(length) {
-                self.set_raw_bits(i * nbits, nbits, value);
-            }
-            return;
-        }
-        // if aligned
-        let item = (0..)
-                       .take(block_cap)
-                       .fold(Block::zero(), |v, _x| v << nbits | value);
-        let ptr = self.buf.ptr();
-        let write_buf = |start: usize, end: usize| {
-            (start..end).fold(ptr.offset(start as isize), |ptr, _x| {
-                ptr::write(ptr, item);
-                ptr.offset(1)
-            });
-        };
-        let (start, end) = Self::loc_range(index, length);
-
-        if start.1 == 0 && end.1 == 0 {
-            write_buf(start.0, end.0)
-        } else if start.1 == 0 {
-            write_buf(start.0, end.0);
-            self.set_block_bits(end.0 * block_bits, end.1, item);
-        } else if end.1 == 0 {
-            self.set_block_bits(index * nbits, block_bits - start.1, item);
-            write_buf(start.0 + 1, end.0);
-        } else {
-            self.set_block_bits(index * nbits, block_bits - start.1, item);
-            self.set_block_bits(end.0 * block_bits, end.1, item);
-            write_buf(start.0 + 1, end.0);
+    pub fn fill(&mut self, index: usize, length: usize, value: Block) {
+        for i in index..cmp::min(index + length, self.len) {
+            unsafe { self.unchecked_set(i, value) }
         }
     }
 
@@ -787,48 +740,52 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if index >= self.len {
             panic!("attempt to set at {} but only {}", index, self.len);
         }
-        unsafe {
-            let nbits = Self::nbits();
-            let offset = index * nbits;
-            if nbits == 1 {
-                self.set_raw_bit(offset, value & Block::one() == Block::one());
-                return;
+        unsafe { self.unchecked_set(index, value) }
+    }
+
+    // `set` the `index`th value as `value` without length checked.
+    #[inline]
+    unsafe fn unchecked_set(&mut self, index: usize, value: Block) {
+        let nbits = Self::nbits();
+        let offset = index * nbits;
+        if nbits == 1 {
+            self.set_raw_bit(offset, value & Block::one() == Block::one());
+            return;
+        }
+        let bi = Self::bit_index(offset);
+        if Self::is_packed() {
+            let ptr = self.buf.ptr().offset(bi as isize);
+            ptr::write(ptr, value);
+            return;
+        }
+        let bo = Self::bit_offset(offset);
+        let bo2 = Self::bit_offset(offset + nbits);
+        let block_bits = Self::block_bits();
+        if Self::is_aligned() || bo < bo2 || bo2 == 0 {
+            let mask = Self::mask();
+            let ptr = self.buf.ptr().offset(bi as isize);
+            let ori = ptr::read(ptr);
+            let new = ori & !(mask << bo) | ((value & mask) << bo);
+            if ori != new {
+                ptr::write(ptr, new);
             }
-            let bi = Self::bit_index(offset);
-            if Self::is_packed() {
-                let ptr = self.buf.ptr().offset(bi as isize);
-                ptr::write(ptr, value);
-                return;
+        } else {
+            let mask = Self::mask();
+            let ptr = self.buf.ptr().offset(bi as isize);
+            let ori = ptr::read(ptr);
+            let new = Block::zero()
+                          .not()
+                          .shr(block_bits - bo)
+                          .bitand(ori)
+                          .bitor(value.bitand(mask).shl(bo));
+            if ori != new {
+                ptr::write(ptr, new);
             }
-            let bo = Self::bit_offset(offset);
-            let bo2 = Self::bit_offset(offset + nbits);
-            let block_bits = Self::block_bits();
-            if Self::is_aligned() || bo < bo2 || bo2 == 0 {
-                let mask = Self::mask();
-                let ptr = self.buf.ptr().offset(bi as isize);
-                let ori = ptr::read(ptr);
-                let new = ori & !(mask << bo) | ((value & mask) << bo);
-                if ori != new {
-                    ptr::write(ptr, new);
-                }
-            } else {
-                let mask = Self::mask();
-                let ptr = self.buf.ptr().offset(bi as isize);
-                let ori = ptr::read(ptr);
-                let new = Block::zero()
-                              .not()
-                              .shr(block_bits - bo)
-                              .bitand(ori)
-                              .bitor(value.bitand(mask).shl(bo));
-                if ori != new {
-                    ptr::write(ptr, new);
-                }
-                let ptr = ptr.offset(1);
-                let ori = ptr::read(ptr);
-                let new = value.shr(nbits - bo2).bitand(mask).bitor(mask.not().bitand(ori));
-                if ori != new {
-                    ptr::write(ptr, new);
-                }
+            let ptr = ptr.offset(1);
+            let ori = ptr::read(ptr);
+            let new = value.shr(nbits - bo2).bitand(mask).bitor(mask.not().bitand(ori));
+            if ori != new {
+                ptr::write(ptr, new);
             }
         }
     }
