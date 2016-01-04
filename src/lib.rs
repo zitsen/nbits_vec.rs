@@ -792,69 +792,6 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
     }
 
-    /// Set `bit` at `index`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
-    /// # fn main() {
-    /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
-    /// vec.reserve(10);
-    /// unsafe { vec.set_len(7) };
-    /// vec.set_bit(0, true);
-    /// # }
-    /// ```
-    ///
-    #[inline]
-    pub fn set_bit(&mut self, index: usize, bit: bool) {
-        let bits = self.bits();
-        if index >= bits {
-            panic!("attempt to set bit out of bounds");
-        }
-        unsafe {
-            self.set_raw_bit(index, bit);
-        }
-    }
-
-    /// Get `bit` at some bit index.
-    ///
-    /// Returns `None` if required index is out of bounds, else return `bool` for bit value.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
-    /// # fn main() {
-    /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
-    /// vec.reserve(10);
-    /// assert!(vec.get_bit(0).is_none());
-    /// vec.resize(10, 0);
-    /// println!("{:?}", vec);
-    /// for i in 0..8 {
-    ///     vec.set_bit(i, true);
-    ///     println!("Set at {} as true", i);
-    ///     println!("{:?}", vec);
-    ///     assert_eq!(vec.get_bit(i), Some(true));
-    /// }
-    /// for i in 0..8 {
-    ///     vec.set_bit(i, false);
-    ///     assert_eq!(vec.get_bit(i), Some(false));
-    /// }
-    /// # }
-    /// ```
-    #[inline]
-    pub fn get_bit(&self, at: usize) -> Option<bool> {
-        let bits = self.bits();
-        if at >= bits {
-            return None;
-        } else {
-            unsafe { Some(self.get_raw_bit(at) == Block::one()) }
-        }
-    }
-
     /// Set `length` bits of buf at `offset`th bit as `value`.
     ///
     /// ## Unsafety
