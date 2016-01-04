@@ -969,7 +969,16 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Set buf unit bit at `index`th unit of `offset`bit.
     #[inline]
     pub unsafe fn set_raw_bit(&mut self, offset: usize, bit: bool) {
-        self.set_raw_bits(offset, 1, if bit { Block::one() } else { Block::zero() })
+        let loc = Self::bit_loc(offset);
+        let mask = Block::one() << loc.1;
+        let ptr = self.buf.ptr().offset(loc.0 as isize);
+        let cur = ptr::read(ptr);
+        let old = cur >> loc.1 & Block::one();
+        match (old == Block::one(), bit) {
+            (lhs, rhs) if lhs == rhs => (),
+            (_, true) => ptr::write(ptr, cur | mask),
+            (_, false) => ptr::write(ptr, cur & !mask),
+        }
     }
 
     /// Get `N` bits value as `B`.
