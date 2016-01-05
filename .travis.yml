@@ -8,10 +8,6 @@ script:
 - cargo build
 - cargo test
 - travis-cargo --only nightly doc
-branches:
-  only:
-  - master
-  - auto
 after_success:
 - travis-cargo --only nightly doc-upload
 env:
