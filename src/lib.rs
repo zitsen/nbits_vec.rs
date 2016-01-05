@@ -37,25 +37,57 @@ use typenum::uint::Unsigned;
 /// Implement vector contains small `N`-bits values using `Block` as unit
 /// buffer.
 ///
-/// The `N` is an `Nbits` type. The `Block` is a `PrimInt` - primitive
-/// iterger type - which size should be greater than `N` bits.
+/// The `N` is an [typenum] which is nonzero and smaller than the size of `Block`.
+/// The `Block` is a `PrimInt` - primitive iterger type, we expect as `Unsigned`,
+/// suck as `u8`, `u32`, `u64`, but it's ok to use `i32`,`i64`,etc.
+///
+/// According to the benchmarks, we sugguest that:
+///
+/// * Use exact size `Block`, means to use `u8`, `u64`, not `usize`.
+/// * Prefer `u64` in an long vector.
+/// * Prefer `u8` in an short vector.
+/// * Prefer `u64`/`u32` than `u8` if cares `insert`/`remove`.
+/// * Anytime ignore the `u16` from your choise unless you really want it.
+///
+/// Note that the result only based on my machine.
+/// Anyone is welcome for sugguestions to use.
+///
+/// [typenum]: https://crates.io/crates/typenum
 ///
 /// # Examples
 ///
 /// ```rust
 /// extern crate raw_nbits_vec as nbits_vec;
 /// use nbits_vec::{NbitsVec, N2};
+/// type NVec = NbitsVec<N2, u8>;
 /// fn main() {
-///     let mut n2bits_vec: NbitsVec<N2, usize> = NbitsVec::new();
-///     n2bits_vec.push(0b11);
-///     n2bits_vec.push(0b10);
-///     assert_eq!(n2bits_vec.pop(), Some(0b10));
-///     assert_eq!(n2bits_vec.pop(), Some(0b11));
-///     n2bits_vec.resize(10, 0b01);
-///     assert_eq!(n2bits_vec.len(), 10);
-///     assert_eq!(n2bits_vec.get(3), 0b01);
-///     n2bits_vec.set(7, 0b10);
-///     assert_eq!(n2bits_vec.get(7), 0b10);
+///     // News.
+///     let _: NbitsVec<N2, usize> = NbitsVec::with_capacity(5);
+///     let mut vec = NVec::new();
+///     // Pushes and pops.
+///     vec.push(0b11);
+///     vec.push(0b10);
+///     let val = vec.pop();
+///     # assert_eq!(val, Some(0b10));
+///     # let val = vec.pop();
+///     # assert_eq!(val, Some(0b11));
+///     // Resizes and reserves.
+///     vec.resize(10, 0b01);
+///     vec.reserve(12);
+///     assert!(vec.capacity() >= 10 + 12);
+///     # assert_eq!(vec.len(), 10);
+///     # assert_eq!(vec.get(3), 0b01);
+///     // Gets and sets.
+///     vec.set(7, 0b10);
+///     # assert_eq!(vec.get(7), 0b10);
+///     let _ = vec.get(7);
+///     // Inserts and removes.
+///     vec.insert(4, 0b01);
+///     # assert_eq!(vec.len(), 11);
+///     let _ = vec.remove(4);
+///     # assert_eq!(vec.len(), 10);
+///     // Fills `8` values from `2` as `0b11`.
+///     vec.fill(2, 8, 0b11);
 /// }
 /// ```
 pub struct NbitsVec<N: Unsigned + NonZero, Block: PrimInt = usize> {
@@ -302,12 +334,12 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// unsafe {
     ///     v.set_len(3);
     /// }
-    /// assert_eq!(v.len(), 3);
-    /// assert_eq!(v.capacity(), 0); // as documented, the capacity will not change
-    /// unsafe {
-    ///     v.set_len(1)
-    /// }
-    /// assert_eq!(v.len(), 1);
+    /// # assert_eq!(v.len(), 3);
+    /// # assert_eq!(v.capacity(), 0); // as documented, the capacity will not change
+    /// # unsafe {
+    /// #    v.set_len(1)
+    /// # }
+    /// # assert_eq!(v.len(), 1);
     /// # }
     /// ```
     #[inline]
@@ -449,11 +481,13 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         unsafe { other.set_len(0) }
     }
 
+    /// Simplely sets the `len` as 0.
     #[inline]
     pub fn clear(&mut self) {
         self.len = 0;
     }
 
+    /// Returns the number of values.
     #[inline]
     pub fn len(&self) -> usize {
         self.len
