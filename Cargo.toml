@@ -10,7 +10,7 @@ documentation = "http://zitsen.github.io/nbits_vec.rs/libr/index.html"
 description = """
 Small bits value (e.g. 1,2.. bits) vector implementation.
 """
-keywords = ["nbits", "bits-vec", "small bits", "vec", "vector"]
+keywords = ["nbits", "bits-vec", "data-structure", "small-bits", "vector"]
 
 [dependencies]
 num = "0.1.29"
