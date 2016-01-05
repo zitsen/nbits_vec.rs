@@ -96,6 +96,28 @@ mod tests {
                     }
                  )*
             }
+            mod align {
+                $(
+                    mod $m {
+                        use raw_nbits_vec::*;
+                        use test::{self,Bencher};
+
+                        #[bench]
+                        fn align(b: &mut Bencher) {
+                            let n = test::black_box(7);
+                            let mut vec: NbitsVec<$nbits, $storage> = NbitsVec::new();
+                            b.iter(|| {
+                                for i in (0..).map(|x| x * x).take(n) {
+                                    vec.align(i, i * 2);
+                                }
+                                for i in (1..n).map(|x| x * x).rev() {
+                                    vec.align(i * 2, i);
+                                }
+                            })
+                        }
+                    }
+                 )*
+            }
         }
     }
     bench_test! {

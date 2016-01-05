@@ -175,24 +175,17 @@ macro_rules! generate_test {
                             #[test]
                             fn align() {
                                 let mut vec = NV::new();
-                                println!("Align to right");
-                                vec.align(0, 100);
-                                assert_eq!(vec.len(), 100);
-                                vec.align(50, 950);
-                                assert_eq!(vec.len(), 1000);
-                                vec.align(900, 1900);
-                                assert_eq!(vec.len(), 2000);
-                                println!("Align to left");
-                                vec.align(987, 923);
-                                assert_eq!(vec.len(), 2000 - (987 - 923));
-                                vec.align(640, 576);
-                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64);
-                                vec.align(555, 444);
-                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64 - 111);
-                                vec.align(432, 319);
-                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64 - 111 - 113);
-                                vec.align(200, 0);
-                                assert_eq!(vec.len(), 2000 - (987 - 923) - 64 - 111 - 113 - 200);
+                                let n = 7;
+                                for i in (0..).map(|x| x * x).take(n) {
+                                    let l = vec.len();
+                                    vec.align(i, i * 2);
+                                    assert_eq!(vec.len(), l + i);
+                                }
+                                for i in (0..n).map(|x| x * x).rev() {
+                                    let l = vec.len();
+                                    vec.align(i * 2, i);
+                                    assert_eq!(vec.len(), l - i);
+                                }
                             }
                         }
 

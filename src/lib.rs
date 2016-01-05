@@ -598,98 +598,85 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
     }
 
-    /// ## Examples
+    /// Move a value flag from `from` to `to`, mask or zero the interval bits.
+    ///
+    /// Indeed, it means to insert or remove `to - from` count of values.
+    ///
+    /// Show what it does:
+    ///
+    /// * from < to:
+    ///
+    /// ```text
+    ///   - Before-align: -----1-------------0--------
+    ///                        |from         |to
+    ///   - After-align:  -----000000000000001--------------0------
+    ///                                      |`from`        |`to`
+    /// ```
+    ///
+    /// * from > to:
+    ///
+    /// ```text
+    ///   - Before-align: -----1-------------0--------
+    ///                        |to           |from
+    ///   - After-align:  -----0--------
+    ///                        |from, to
+    /// ```
+    ///
+    /// # Examples
     ///
     /// ```
     /// # extern crate raw_nbits_vec;
     /// # use raw_nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2, u8> = NbitsVec::new();
+    /// // Prepare data.
     /// vec.resize(24, 0);
-    /// unsafe {
-    ///     vec.fill(0, 12, 1);
-    ///     vec.fill(12, 12, 2);
-    /// }
-    /// println!("{:?}", vec);
+    /// vec.fill(0, 12, 1);
+    /// vec.fill(12, 12, 2);
+    /// # println!("{:?}", vec);
     /// // Left align will reduce the length.
     /// vec.align(1, 0);
-    /// assert_eq!(vec.len(), 23);
-    /// assert!((0..).take(11).all(|x| vec.get(x) == 1));
-    /// assert!((11..).take(12).all(|x| vec.get(x) == 2));
-    ///
+    /// # assert_eq!(vec.len(), 23);
+    /// # assert!((0..).take(11).all(|x| vec.get(x) == 1));
+    /// # assert!((11..).take(12).all(|x| vec.get(x) == 2));
     /// vec.align(11, 3);
-    /// assert_eq!(vec.len(), 23 - 8);
-    /// assert!((0..).take(3).all(|x| vec.get(x) == 1));
-    /// assert!((3..vec.len()).all(|x| vec.get(x) == 2));
+    /// # assert_eq!(vec.len(), 23 - 8);
+    /// # assert!((0..).take(3).all(|x| vec.get(x) == 1));
+    /// # assert!((3..vec.len()).all(|x| vec.get(x) == 2));
     /// // Right align will expand the length.
     /// vec.align(6, 7);
-    /// assert_eq!(vec.len(), 23 - 8 + 1);
-    /// assert!((6..7).all(|x| vec.get(x) == 0));
-    /// assert!((7..vec.len()).all(|x| vec.get(x) == 2));
-    ///
+    /// # assert_eq!(vec.len(), 23 - 8 + 1);
+    /// # assert!((6..7).all(|x| vec.get(x) == 0));
+    /// # assert!((7..vec.len()).all(|x| vec.get(x) == 2));
     /// vec.align(13, 33);
-    /// assert_eq!(vec.len(), 23 - 8 + 1 + 33 - 13);
-    /// assert!((13..33).all(|x| vec.get(x) == 0));
-    /// assert!((33..vec.len()).all(|x| vec.get(x) == 2));
+    /// # assert_eq!(vec.len(), 23 - 8 + 1 + 33 - 13);
+    /// # assert!((13..33).all(|x| vec.get(x) == 0));
+    /// # assert!((33..vec.len()).all(|x| vec.get(x) == 2));
     /// println!("{:?}", vec);
     /// # }
     /// ```
     #[inline]
-    pub fn align(&mut self, offset: usize, to: usize) {
-        let unit = Self::nbits();
-        let buf_unit = Self::block_bits();
-        let unit_cap = buf_unit / unit;
-        if offset > to {
+    pub fn align(&mut self, from: usize, to: usize) {
+        if from > to {
             // Reduce `interval` length.
-            let interval = offset - to;
-            // e.g. N = 2, Block = u8, interval = 4
-            if buf_unit % unit == 0 && interval % unit_cap == 0 {
-                // Copy previous offset * unit % buf_unit values.
-                let extra = offset % unit_cap;
-                let (offset, to) = (0..extra).fold((offset, to), |(offset, to), _i| {
-                    let value = self.get(offset);
-                    self.set(to, value);
-                    (offset + 1, to + 1)
-                });
-                unsafe {
-                    let ptr = self.buf.ptr();
-                    let src = offset / unit_cap;
-                    let dst = to / unit_cap;
-                    let count = self.len() / unit_cap - src + 1;
-                    ptr::copy(ptr.offset(src as isize), ptr.offset(dst as isize), count);
-                }
-            } else {
-                for offset in offset..self.len() {
-                    let value = self.get(offset);
-                    self.set(offset - interval, value);
-                }
+            let interval = from - to;
+            for from in from..self.len() {
+                let value = self.get(from);
+                self.set(from - interval, value);
             }
             self.len = self.len - interval;
         } else {
             // Expand with `interval` length values.
-            let interval = to - offset;
+            let interval = to - from;
             let len = self.len();
             self.reserve_exact(interval);
-            if buf_unit % unit == 0 && interval % unit_cap == 0 {
-                unsafe {
-                    let ptr = self.buf.ptr();
-                    let src = offset / unit_cap;
-                    let dst = to / unit_cap;
-                    let count = len / unit_cap - src + 1;
-                    ptr::copy(ptr.offset(src as isize), ptr.offset(dst as isize), count);
-                    self.len = self.len() + interval;
-                    self.fill(offset, interval, Block::zero());
-                }
-            } else {
-                self.len = len + interval;
-                for offset in (offset..len).rev() {
-                    let value = self.get(offset);
-                    self.set(offset + interval, value);
-                }
-                unsafe {
-                    self.fill(offset, interval, Block::zero());
-                }
+            self.len = len + interval;
+            for from in (from..len).rev() {
+                let value = self.get(from);
+                self.set(from + interval, value);
             }
+            // Set interval values as 0.
+            self.fill(from, interval, Block::zero());
         }
     }
 
@@ -703,17 +690,15 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # fn main() {
     /// let mut vec: NbitsVec<N2, u8> = NbitsVec::new();
     /// vec.resize(24, 0);
-    /// println!("{:?}", vec);
-    /// unsafe {
-    ///     vec.fill(1, 2, 2); // length < buf_unit
-    ///     assert!((1..).take(2).all(|x| vec.get(x) == 2));
-    ///     vec.fill(0, 8, 1); // offset: 0, 0
-    ///     assert!((0..).take(8).all(|x| vec.get(x) == 1));
-    ///     vec.fill(7, 10, 2); // offset: n, n
-    ///     assert!((7..).take(10).all(|x| vec.get(x) == 2));
-    ///     vec.fill(8, 11, 1); // offset: 0,n
-    ///     assert!((8..).take(11).all(|x| vec.get(x) == 1));
-    /// }
+    /// # println!("{:?}", vec);
+    /// vec.fill(1, 2, 2); // length < buf_unit
+    /// # assert!((1..).take(2).all(|x| vec.get(x) == 2));
+    /// vec.fill(0, 8, 1); // offset: 0, 0
+    /// # assert!((0..).take(8).all(|x| vec.get(x) == 1));
+    /// vec.fill(7, 10, 2); // offset: n, n
+    /// # assert!((7..).take(10).all(|x| vec.get(x) == 2));
+    /// vec.fill(8, 11, 1); // offset: 0, n
+    /// # assert!((8..).take(11).all(|x| vec.get(x) == 1));
     /// # }
     /// ```
     #[inline]
