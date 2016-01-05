@@ -1,11 +1,11 @@
-# raw_nbits_vec
+# nbits_vec
 
 A crate aims to resolve small bits values storage and operations problem.
 
-[![Build Status](https://travis-ci.org/zitsen/raw_nbits_vec.rs.svg?branch=master)]
-(https://travis-ci.org/zitsen/raw_nbits_vec.rs)
+[![Build Status](https://travis-ci.org/zitsen/nbits_vec.rs.svg?branch=master)]
+(https://travis-ci.org/zitsen/nbits_vec.rs)
 
-[Documentation](http://zitsen.github.io/raw_nbits_vec.rs)
+[Documentation](http://zitsen.github.io/nbits_vec.rs)
 
 Small bits values will be stored in a vector of `Block` - which is a `PrimInt` in
 memory. Here, we only consider the case that one `Block` will store some of the

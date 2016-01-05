@@ -1,9 +1,7 @@
+//! [![travis-badge][]][travis] [![release-badge][]][cargo] [![downloads]][cargo]
+//! [![docs-badge][]][docs] [![license-badge][]][license]
+//!
 //! A crate aims to resolve small bits values storage and operations problem.
-//!
-//! [![Build Status](https://travis-ci.org/zitsen/raw_nbits_vec.rs.svg?branch=master)]
-//! (https://travis-ci.org/zitsen/raw_nbits_vec.rs)
-//!
-//! [Documentation](http://zitsen.github.io/raw_nbits_vec.rs)
 //!
 //! Small bits values will be stored in a vector of `Block` - which is a `PrimInt` in
 //! memory. Here, we only consider the case that one `Block` will store some of the
@@ -15,6 +13,17 @@
 //! the API might be changed in some time the `alloc` API changed.
 //! So a `stable` version may never give out.
 //!
+//! See usage in [struct documentation](struct.NbitsVec.html).
+//!
+//! [travis-badge]: https://img.shields.io/travis/zitsen/nbits_vec.rs.svg?style=flat-square
+//! [travis]: https://travis-ci.org/zitsen/nbits_vec.rs
+//! [release-badge]: https://img.shields.io/crates/v/nbits_vec.svg?style=flat-square
+//! [downloads]: https://img.shields.io/crates/d/nbits_vec.svg?style=flat-square
+//! [cargo]: https://crates.io/crates/nbits_vec
+//! [docs-badge]: https://img.shields.io/badge/API-docs-blue.svg?style=flat-square
+//! [docs]: https://zitsen.github.io/nbits_vec.rs
+//! [license-badge]: https://img.shields.io/crates/l/nbits_vec.svg?style=flat-square
+//! [license]: https://github.com/zitsen/nbits_vec.rs/blob/master/LICENSE
 
 #![feature(alloc)]
 #![cfg_attr(feature="nightly", feature(plugin))]
@@ -60,7 +69,7 @@ use typenum::uint::Unsigned;
 /// # Examples
 ///
 /// ```rust
-/// extern crate raw_nbits_vec as nbits_vec;
+/// extern crate nbits_vec as nbits_vec;
 /// use nbits_vec::{NbitsVec, N2};
 /// type NVec = NbitsVec<N2, u8>;
 /// fn main() {
@@ -106,8 +115,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// # Examples
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// # }
@@ -136,8 +145,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// # Examples
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// assert!(vec.capacity() >= 10);
@@ -167,8 +176,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// # Examples
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// use std::mem;
     /// fn main() {
     ///     let mut v: NbitsVec<N2> = NbitsVec::with_capacity(10);
@@ -199,8 +208,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// # Examples
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::{NbitsVec, N1};
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::{NbitsVec, N1};
     /// # fn main() {
     /// let v: NbitsVec<N1> = NbitsVec::with_capacity(10);
     /// assert!(v.capacity() >= 10);
@@ -223,8 +232,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<N2> = NbitsVec::new();
     /// assert!(v.capacity() == 0);
@@ -250,8 +259,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// use nbits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<N2> = NbitsVec::new();
     /// assert!(v.capacity() == 0);
@@ -278,8 +287,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// vec.shrink_to_fit();
@@ -300,8 +309,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(2);
     /// unsafe { vec.set_len(2) }
@@ -330,8 +339,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<N2> = NbitsVec::new();
     /// unsafe {
@@ -353,8 +362,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<N2> = NbitsVec::new();
     /// v.push(0b01);
@@ -380,8 +389,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<N2> = NbitsVec::new();
     /// v.push(0b01);
@@ -416,8 +425,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut v: NbitsVec<N2> = NbitsVec::new();
     /// v.push(0b01);
@@ -460,8 +469,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// let mut other: NbitsVec<N2> = NbitsVec::new();
@@ -503,8 +512,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// assert_eq!(vec.bits(), 0);
@@ -520,8 +529,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// assert_eq!(vec.cap_bits(), std::mem::size_of::<usize>() * 8);
@@ -539,8 +548,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// assert!(vec.is_empty());
@@ -556,8 +565,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// vec.push(0b10);
@@ -580,8 +589,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// vec.push(0b10);
@@ -612,8 +621,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// vec.resize(10, 0);
@@ -660,8 +669,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2, u8> = NbitsVec::new();
     /// // Prepare data.
@@ -720,8 +729,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ## Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2, u8> = NbitsVec::new();
     /// vec.resize(24, 0);
@@ -746,8 +755,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ## Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// unsafe { vec.set_len(2) }
@@ -823,8 +832,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ## Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     ///
@@ -951,8 +960,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ## Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// unsafe { vec.set_len(2) }
@@ -1002,8 +1011,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     ///
     /// ```
-    /// # extern crate raw_nbits_vec;
-    /// # use raw_nbits_vec::*;
+    /// # extern crate nbits_vec;
+    /// # use nbits_vec::*;
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// vec.resize(10, 0);
