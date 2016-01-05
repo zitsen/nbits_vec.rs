@@ -1,22 +1,34 @@
 sudo: false
 language: rust
 rust:
-  - nightly
-
+- nightly
 before_script:
-  - pip install 'travis-cargo<0.2' --user
-
+- pip install 'travis-cargo<0.2' --user
 script:
-  - cargo build
-  - cargo test
-  - travis-cargo --only nightly doc
+- cargo build
+- cargo test
+- travis-cargo --only nightly doc
 branches:
   only:
-    - master
-    - auto
+  - master
+  - auto
 after_success:
-  - travis-cargo --only nightly doc-upload
-
+- travis-cargo --only nightly doc-upload
 env:
   global:
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+  - TRAVIS_CARGO_NIGHTLY_FEATURE=""
+  - secure: nUTGxnw03D8eDWWS4dR2pdY7+NBj7viRFzoSAu9hNfBG3RmDJBIAcGI8/6l0Mqytq7InAxXjaaAMtvOutmHFwpLnenfKmHV0DQTFsCV300X1kH/XKcwkK0QJBEJtYYCCQT4TB/LjaAGeUrznXdVtrw3DxGFU9jo3kQ5TzNfsuqQCwD4Uj/fvrYc87W3MJK+4bgVA4wSdkUyQ6wlcpIe0sObvJv0mNCJepflhELF6LjRCEjIdWFYb78JHN8jFzuGIbVdCZBKkZBEXnVyRMnTS0/goeS6tTvb1f9rBz6ElguDnUlO0DTP93pqvFaJokHI1/Ul0paaKwIElrwKL47QqQvDWf0w0/CdM+EKtOYOoyMp6bSUDBidEDglfZbEvFzz+VR/j7L/ICLeThrNMJmenQPBIMRNJhyNsYKwdpQdnsw7cg9ra7uDQ9xJwM5/bjJYyNOtJCtUyq4obmTMzRD05OZGWiKmvB6oNBGJ59pNLZhK6wKDhhcTOe6zpxpe3dvpK21kFAsg1RuLsxUym2RD9Qm+Pjhzi4QDfL5sK+LtIhSAZa4DmfKWp9d5KzFjygQbVtl0P7bxRN01acSWvQarWObFsSB6ombu+SnqO2jN+xZlketCFKRFpUaIPvz7yHPj2rKEMTk7a57Wkqs8lZRe6VE0l5ENB80wMPIE2tqYguSc=
+  - secure: 18sXmwiKi04B6hEF8sGEHCKP/QqHoiQ76KqRQ2Nu7I/F+ZXrecpPMJV+VAAviwc5r9qjNb5XRuXqD930/2oOid9Z89VgKG3Ipqp5hO7YA6zpIjOEDWBnojxD1xGOagnXrQ6AXRqWlK5YHNkVnIbUaj70KGGtht5P7PUiAa6ZBo1hFV/YU0ZEOINyEKd9nUpQWP7pf8H9kl1JP5NXqfTzo+OaHRO6s4uTQeVsezdNC0icDJ/0XFVTBKWOtbiwWM1Bm99t/VQUOZW/S3/ZRanaw9RorCBtqDFzPDkhdPUNA8JRTcSlyk2/kptiXeUJW5WuEdEmR24fZJYH3TW6uRurX43T//NTOIUJtDPvM7nA0sVGyPthdtN622FQx+We0iFLoJP01MDHdlXAPj4hAl5EbUzfHTn6W3KpNtPOwhPw730VzKqeGB2zNKY78O+Lhz8PRs5fHoB9XyvwpnUP7adgtINHNNAcBodVWFLTJBTxFK69yiltIBLWlM2c5t1XlLKbQnqM+hrp2bObD7Tf56mrgcDmBedOK0Khgj24XgEx28KD1Ce48WQ6AL4T43IVuz3MVely9Zr/yNgQjQvu+7G9f2ZP0K42wfcDa0GlvUsUPsHHPYDyxg+CAgwq4KetXqXXhnuNj17cJsA9P820KKL8Y0tGnPJM7W9uBVjTHbxdNGY=
+deploy:
+  provider: releases
+  api_key:
+    secure: jfu983cNw+VPkWudB3TpFPKXSECjXyAPkK45AawfFRCS51iyJZkJcz+PnuLTgNn+aG5z4wvxmJsbcmHTbqev2Eya1q+JA4rrph8YvnyaNm0DH/wcNRjMpzFZMgdiQD7EyIUS8vlX7+gFBMVgfNM05psxl/Xg/cxjFTBOFhtwlDOQ6MzxlrorrYbbqvOfs9XWSvQv+5d+jjLUV65FB/ACBzlRWp+KZqT/p2htCs/F5qCp+TBgRovTGaaf+Ri0dlO2YZg4NCRH+RITZwtptMPVF9vWQSSKQZ5QVfCI1cpX9O7bpO7/CRwGpuSOV166T98es0emjL3Ly7j3mXudrNIY8rHg4VxrmS/pTGmddIEVmqeCRKt2FNYBOK6BX8HlJO7m7OVuAyLuQRA1iVPZCcs/pqjT++9f5mU3r1VN+HXju3pQiolucss3Cl7Cow03VLHZFKgBr0ay9yP6Z0Xqiml0VL4SxSBwncHy138E3LRsmtozHTyaNH4K0mnKTFUBYWkhSYCv9jZ9IVsryD+M+HkaTIwMNIPYHFwDWzQY0ZkT28zwJ6H8yTLWzzr78vbFofhkseOIg1pFAJIsmeOi9nM+8MN1evARghdXYJwY9zR28bwYXR98Sy2CU+kUz/6IfbOfTue75rffn1f+gyxX9Y01zQNiE13ITFFaR6C/hyFyssY=
+  file: target/package/nbits_vec-$TRAVIS_TAG.crate
+  on:
+    tags: true
+    all_branches: true
+    repo: zitsen/nbits_vec.rs
+before_deploy:
+  - cargo package
+after_deploy:
+  - cargo publish --token "$CRATESIO_TOKEN"
