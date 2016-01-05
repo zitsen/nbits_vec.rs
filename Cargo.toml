@@ -6,7 +6,7 @@ license = "MIT"
 readme  = "README.md"
 homepage = "https://github.com/zitsen/nbits_vec.rs"
 repository = "https://github.com/zitsen/nbits_vec.rs.git"
-documentation = "http://zitsen.github.io/nbits_vec.rs/libr/index.html"
+documentation = "http://zitsen.github.io/nbits_vec.rs"
 description = """
 Small bits value (e.g. 1,2.. bits) vector implementation.
 """
