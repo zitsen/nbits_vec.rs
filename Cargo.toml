@@ -1,24 +1,22 @@
 [package]
-name = "nbits_vec"
-version = "0.1.0"
 authors = ["Huo Linhe <huolinhe@berrygenomics.com>"]
-license = "MIT"
-readme  = "README.md"
-homepage = "https://github.com/zitsen/nbits_vec.rs"
-repository = "https://github.com/zitsen/nbits_vec.rs.git"
+description = "Small bits value (e.g. 1,2.. bits) vector implementation."
 documentation = "http://zitsen.github.io/nbits_vec.rs"
-description = """
-Small bits value (e.g. 1,2.. bits) vector implementation.
-"""
+homepage = "https://github.com/zitsen/nbits_vec.rs"
 keywords = ["nbits", "bits-vec", "data-structure", "small-bits", "vector"]
+license = "MIT"
+name = "nbits_vec"
+readme = "README.md"
+repository = "https://github.com/zitsen/nbits_vec.rs.git"
+version = "0.1.1"
 
 [dependencies]
 num = "0.1.29"
 typenum = "^1.1"
 
 [dependencies.clippy]
-version = "0.0.33"
 optional = true
+version = "0.0.33"
 
 [features]
 default = []
