@@ -17,8 +17,8 @@
 //!
 
 #![feature(alloc)]
-#![feature(plugin)]
-#![plugin(clippy)]
+#![cfg_attr(feature="nightly", feature(plugin))]
+#![cfg_attr(feature="nightly", plugin(clippy))]
 
 extern crate alloc;
 extern crate num;

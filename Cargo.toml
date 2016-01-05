@@ -15,4 +15,11 @@ keywords = ["nbits", "bits-vec", "small bits", "vec", "vector"]
 [dependencies]
 num = "0.1.29"
 typenum = "^1.1"
-clippy  = "0.0.33"
+
+[dependencies.clippy]
+version = "0.0.33"
+optional = true
+
+[features]
+default = []
+nightly = ["clippy"]
