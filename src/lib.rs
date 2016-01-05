@@ -15,7 +15,10 @@
 //! the API might be changed in some time the `alloc` API changed.
 //! So a `stable` version may never give out.
 //!
+
 #![feature(alloc)]
+#![feature(plugin)]
+#![plugin(clippy)]
 
 extern crate alloc;
 extern crate num;
@@ -204,7 +207,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(v.capacity(), std::mem::size_of::<usize>() * 8);
     /// # }
     /// ```
-    #[inline(always)]
+    #[inline]
     pub fn capacity(&self) -> usize {
         Self::cap_from(self.buf.cap())
     }
@@ -591,7 +594,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     pub fn pop(&mut self) -> Option<Block> {
         if self.len == 0 {
-            return None;
+            None
         } else {
             let ret = Some(self.get(self.len() - 1));
             self.len -= 1;
@@ -614,7 +617,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// vec.resize(10, 0);
-    /// assert_eq!(vec.capacity(), std::mem::size_of::<usize>() * 8 / 2);
+    /// # assert_eq!(vec.capacity(), std::mem::size_of::<usize>() * 8 / 2);
     /// # }
     /// ```
     #[inline]
@@ -623,10 +626,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         if len < new_len {
             let n = new_len - len;
             self.reserve_exact(n);
-            unsafe {
-                self.len = new_len;
-                self.fill(len, n, value);
-            }
+            self.len = new_len;
+            self.fill(len, n, value);
         } else {
             self.truncate(new_len);
         }
@@ -930,23 +931,6 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
     }
 
-    /// Set buf element of `index` at offset `from` to `to` as `value`.
-    #[inline]
-    unsafe fn set_block_bits(&mut self, offset: usize, length: usize, value: Block) {
-        let loc = Self::bit_loc(offset);
-        let mask = (loc.1..)
-                       .take(length)
-                       .fold(Block::zero(), |mask, _x| mask << 1 | Block::one()) <<
-                   loc.1;
-        let ptr = self.buf.ptr().offset(loc.0 as isize);
-        let cur = ptr::read(ptr);
-        let new = mask & (value << loc.1);
-        let old = mask & cur;
-        if old != new {
-            ptr::write(ptr, cur & !mask | new);
-        }
-    }
-
     /// Set buf unit bit at `index`th unit of `offset`bit.
     #[inline]
     pub unsafe fn set_raw_bit(&mut self, offset: usize, bit: bool) {
@@ -1087,14 +1071,6 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         self.get_raw_bits(pos, 1) == Block::one()
     }
 
-    /// Get buf `length` bits of unit at `index`th unit's `offset`th bit
-    #[inline]
-    unsafe fn get_block_bits(&self, loc: (usize, usize), length: usize) -> Block {
-        let ptr = self.buf.ptr().offset(loc.0 as isize);
-        let unit = Self::block_bits();
-        (ptr::read(ptr) << (unit - loc.1 - length)) >> (unit - length)
-    }
-
     /// Returns mutable ptr of `Block`.
     #[inline]
     pub fn raw_mut_ptr(&mut self) -> *mut Block {
@@ -1192,12 +1168,6 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         (bits / rbits, bits % rbits)
     }
 
-    /// Converts the vector index range to buf `(index, offset)` range tuple.
-    #[inline]
-    fn loc_range(index: usize, length: usize) -> (Loc, Loc) {
-        (Self::loc(index), Self::loc(index + length))
-    }
-
     /// Converts bit index to buf `BitLoc`.
     #[inline]
     fn bit_loc(bit: usize) -> BitLoc {
@@ -1205,23 +1175,25 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         (bit / rbits, bit % rbits)
     }
 
+    /// Returns block offset of bit position `bit`.
     #[inline]
     fn bit_offset(bit: usize) -> usize {
         bit % Self::block_bits()
     }
 
+    /// Returns block index of bit position `bit`.
     #[inline]
     fn bit_index(bit: usize) -> usize {
         bit / Self::block_bits()
     }
 
-    /// Returns size of `B`.
+    /// Returns size of `Block`.
     #[inline]
     fn block_bits() -> usize {
         mem::size_of::<Block>() * 8
     }
 
-    /// Returns unit of bits - that is `NbitsVec`'s `N` meaning.
+    /// Returns `N` in usize.
     #[inline]
     pub fn nbits() -> usize {
         N::to_usize()
@@ -1229,7 +1201,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Bit mask.
     #[inline]
-    fn mask() -> Block {
+    pub fn mask() -> Block {
         Block::zero().not().shr(Self::block_bits() - Self::nbits())
     }
 
