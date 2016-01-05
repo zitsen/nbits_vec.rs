@@ -1083,8 +1083,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     /// Get raw bit at `pos`.
     #[inline]
-    pub unsafe fn get_raw_bit(&self, pos: usize) -> Block {
-        self.get_raw_bits(pos, 1)
+    pub unsafe fn get_raw_bit(&self, pos: usize) -> bool {
+        self.get_raw_bits(pos, 1) == Block::one()
     }
 
     /// Get buf `length` bits of unit at `index`th unit's `offset`th bit

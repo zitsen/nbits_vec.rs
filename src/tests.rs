@@ -52,9 +52,9 @@ macro_rules! generate_test {
                                 unsafe {
                                     for i in 0..(100 * NV::nbits()) {
                                         vec.set_raw_bit(i, true);
-                                        assert_eq!(vec.get_raw_bit(i), 0b1);
+                                        assert_eq!(vec.get_raw_bit(i), true);
                                         vec.set_raw_bit(i, false);
-                                        assert_eq!(vec.get_raw_bit(i), 0b0);
+                                        assert_eq!(vec.get_raw_bit(i), false);
                                     }
                                 }
                             }
