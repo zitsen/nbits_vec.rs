@@ -46,6 +46,7 @@ use std::marker::{PhantomData, Send, Sync};
 use typenum::NonZero;
 use typenum::uint::Unsigned;
 
+pub mod traits;
 /// Implement vector contains small `N`-bits values using `Block` as unit
 /// buffer.
 ///
