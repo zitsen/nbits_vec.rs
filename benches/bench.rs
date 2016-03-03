@@ -1,6 +1,6 @@
 #![feature(test)]
 #![feature(step_by)]
-extern crate raw_nbits_vec;
+extern crate nbits_vec;
 extern crate test;
 extern crate num;
 
@@ -10,7 +10,7 @@ mod tests {
             mod get {
                 $(
                     mod $m {
-                        use raw_nbits_vec::*;
+                        use nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn bench(b: &mut Bencher) {
@@ -27,7 +27,7 @@ mod tests {
             mod resize {
                 $(
                     mod $m {
-                        use raw_nbits_vec::*;
+                        use nbits_vec::*;
                         use test::{self, Bencher};
                         use num::Zero;
                         #[bench]
@@ -46,7 +46,7 @@ mod tests {
             mod set {
                 $(
                     mod $m {
-                        use raw_nbits_vec::*;
+                        use nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn bench(b: &mut Bencher) {
@@ -65,7 +65,7 @@ mod tests {
             mod new {
                 $(
                     mod $m {
-                        use raw_nbits_vec::*;
+                        use nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn bench(b: &mut Bencher) {
@@ -81,7 +81,7 @@ mod tests {
             mod push {
                 $(
                     mod $m {
-                        use raw_nbits_vec::*;
+                        use nbits_vec::*;
                         use test::{self, Bencher};
                         #[bench]
                         fn push(b: &mut Bencher) {
@@ -99,7 +99,7 @@ mod tests {
             mod align {
                 $(
                     mod $m {
-                        use raw_nbits_vec::*;
+                        use nbits_vec::*;
                         use test::{self,Bencher};
 
                         #[bench]
