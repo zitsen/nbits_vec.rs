@@ -26,8 +26,6 @@
 //! [license]: https://github.com/zitsen/nbits_vec.rs/blob/master/LICENSE
 
 #![feature(alloc)]
-#![cfg_attr(feature="nightly", feature(plugin))]
-#![cfg_attr(feature="nightly", plugin(clippy))]
 
 extern crate alloc;
 extern crate num;

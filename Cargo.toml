@@ -11,13 +11,5 @@ repository = "https://github.com/zitsen/nbits_vec.rs.git"
 version = "0.1.1"
 
 [dependencies]
-num = "0.1.29"
-typenum = "^1.1"
-
-[dependencies.clippy]
-optional = true
-version = "0.0.33"
-
-[features]
-default = []
-nightly = ["clippy"]
+num = "^0.1.31"
+typenum = "^1.3.0"
