@@ -3,8 +3,8 @@
 //!
 //! A crate aims to resolve small bits values storage and operations problem.
 //!
-//! Small bits values will be stored in a vector of `Block` - which is a `PrimInt` in
-//! memory. Here, we only consider the case that one `Block` will store some of the
+//! Small bits values will be stored in a vector of `T::Block` - which is a `PrimInt` in
+//! memory. Here, we only consider the case that one `T::Block` will store some of the
 //! small bits values, such as 1, 2, 3, 4, 5 bits stored in `u8`, `u16`, `u32`, `u64`.
 //!
 //! **WARN**: In this crate, I([@zitsen](http://github.com/zitsen)) decided to use
@@ -26,35 +26,35 @@
 //! [license]: https://github.com/zitsen/nbits_vec.rs/blob/master/LICENSE
 
 #![feature(alloc)]
+#![feature(zero_one)]
 
 extern crate alloc;
-extern crate num;
-extern crate typenum;
 
 use alloc::raw_vec::RawVec;
-use num::PrimInt;
 use std::cmp;
 use std::fmt::{self, Debug};
 use std::hash::{self, Hash};
 use std::mem;
 use std::ptr;
 use std::slice;
-use std::ops::{BitAnd, BitOr, Shl, Shr};
+use std::ops::{BitAnd, BitOr, Not, Shl, Shr};
+use std::num::{One, Zero};
 use std::marker::{PhantomData, Send, Sync};
-use typenum::NonZero;
-use typenum::uint::Unsigned;
+use self::value::*;
 
-pub mod traits;
-/// Implement vector contains small `N`-bits values using `Block` as unit
+pub mod value;
+pub mod consts;
+// pub mod traits;
+/// Implement vector contains small `N`-bits values using `T::Block` as unit
 /// buffer.
 ///
-/// The `N` is an [typenum] which is nonzero and smaller than the size of `Block`.
-/// The `Block` is a `PrimInt` - primitive iterger type, we expect as `Unsigned`,
+/// The `N` is an [typenum] which is nonzero and smaller than the size of `T::Block`.
+/// The `T::Block` is a `PrimInt` - primitive iterger type, we expect as `Unsigned`,
 /// suck as `u8`, `u32`, `u64`, but it's ok to use `i32`,`i64`,etc.
 ///
 /// According to the benchmarks, we sugguest that:
 ///
-/// * Use exact size `Block`, means to use `u8`, `u64`, not `usize`.
+/// * Use exact size `T::Block`, means to use `u8`, `u64`, not `usize`.
 /// * Prefer `u64` in an long vector.
 /// * Prefer `u8` in an short vector.
 /// * Prefer `u64`/`u32` than `u8` if cares `insert`/`remove`.
@@ -69,11 +69,12 @@ pub mod traits;
 ///
 /// ```rust
 /// extern crate nbits_vec as nbits_vec;
-/// use nbits_vec::{NbitsVec, N2};
-/// type NVec = NbitsVec<N2, u8>;
+/// use nbits_vec::NbitsVec;
+/// use nbits_vec::consts::N2B64 as N2;
+/// type NVec = NbitsVec<N2>;
 /// fn main() {
 ///     // News.
-///     let _: NbitsVec<N2, usize> = NbitsVec::with_capacity(5);
+///     let _ = NVec::with_capacity(5);
 ///     let mut vec = NVec::new();
 ///     // Pushes and pops.
 ///     vec.push(0b11);
@@ -101,13 +102,13 @@ pub mod traits;
 ///     vec.fill(2, 8, 0b11);
 /// }
 /// ```
-pub struct NbitsVec<N: Unsigned + NonZero, Block: PrimInt = usize> {
-    buf: RawVec<Block>,
+pub struct NbitsVec<T: Value> {
+    buf: RawVec<T::Block>,
     len: usize,
-    _marker: PhantomData<N>,
+    _marker: PhantomData<T>,
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
+impl<T: ValueExt> NbitsVec<T> {
     /// Constructs a new, empty NbitsVec<N>
     ///
     /// The vector will not allocate until elements are pushed onto it.
@@ -123,11 +124,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// # Panics
     ///
-    /// Constructor will panic if the `Block` unit bits is smaller than `N`bits.
+    /// Constructor will panic if the `T::Block` unit bits is smaller than `N`bits.
     /// This should panic in `new`, `with_capacity`, `from_raw_parts` methods.
     #[inline]
     pub fn new() -> Self {
-        Self::check_if_n_valid();
         NbitsVec {
             buf: RawVec::new(),
             len: 0,
@@ -153,24 +153,23 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
-        Self::check_if_n_valid();
         NbitsVec {
-            buf: RawVec::with_capacity(Self::raw_cap_from(capacity)),
+            buf: RawVec::with_capacity(T::raw_cap_from(capacity)),
             len: 0,
             _marker: PhantomData,
         }
     }
 
-    /// Constructs a `NbitsVec<N, Block>` directly from the raw components of another vector,
+    /// Constructs a `NbitsVec<T>` directly from the raw components of another vector,
     /// like [standard Vec][std::vec::Vec] does.
     ///
     /// # Safety
     ///
     /// This is highly unsafe, due to the number of invariants that aren't checked:
     ///
-    /// * `ptr` needs to have been previously allocated via `Vec<T>/NbitsVec<N, Block>`.
+    /// * `ptr` needs to have been previously allocated via `Vec<T>/NbitsVec<T>`.
     /// * `length` needs to be the length that less than or equal to `capacity`.
-    /// * `capacity` needs to be the `capacity` as a `NbitsVec<N, Block>`, not the size that
+    /// * `capacity` needs to be the `capacity` as a `NbitsVec<T>`, not the size that
     /// the pointer was allocated with.
     ///
     /// # Examples
@@ -194,10 +193,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// [std::vec::Vec]: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.from_raw_parts
     #[inline]
-    pub unsafe fn from_raw_parts(ptr: *mut Block, length: usize, capacity: usize) -> Self {
-        Self::check_if_n_valid();
+    pub unsafe fn from_raw_parts(ptr: *mut T::Block, length: usize, capacity: usize) -> Self {
         NbitsVec {
-            buf: RawVec::from_raw_parts(ptr, Self::raw_cap_from(capacity)),
+            buf: RawVec::from_raw_parts(ptr, T::raw_cap_from(capacity)),
             len: length,
             _marker: PhantomData,
         }
@@ -208,16 +206,18 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # Examples
     /// ```
     /// # extern crate nbits_vec;
-    /// # use nbits_vec::{NbitsVec, N1};
+    /// # use nbits_vec::{NbitsVec};
+    /// # use nbits_vec::consts::N1B64 as N1;
     /// # fn main() {
     /// let v: NbitsVec<N1> = NbitsVec::with_capacity(10);
+    /// println!("{:?}", v);
     /// assert!(v.capacity() >= 10);
-    /// assert_eq!(v.capacity(), std::mem::size_of::<usize>() * 8);
+    /// assert_eq!(v.capacity(), 64);
     /// # }
     /// ```
     #[inline]
     pub fn capacity(&self) -> usize {
-        Self::cap_from(self.buf.cap())
+        T::cap_from(self.buf.cap())
     }
 
     /// Reserves capacity for at least additional more elements to be inserted in the given
@@ -243,8 +243,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     pub fn reserve(&mut self, additional: usize) {
         let required_cap = self.len().checked_add(additional).expect("capacity overflow");
-        let used_cap = Self::raw_cap_from(self.len());
-        let need_extra_cap = Self::raw_cap_from(required_cap);
+        let used_cap = T::raw_cap_from(self.len());
+        let need_extra_cap = T::raw_cap_from(required_cap);
         self.buf.reserve(used_cap, need_extra_cap);
     }
 
@@ -274,8 +274,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     #[inline]
     pub fn reserve_exact(&mut self, additional: usize) {
         let required_cap = self.len().checked_add(additional).expect("capacity overflow");
-        let used_cap = Self::raw_cap_from(self.len());
-        let need_extra_cap = Self::raw_cap_from(required_cap);
+        let used_cap = T::raw_cap_from(self.len());
+        let need_extra_cap = T::raw_cap_from(required_cap);
         self.buf.reserve_exact(used_cap, need_extra_cap);
     }
     /// Shrinks the capacity of the vector as much as possible.
@@ -297,7 +297,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     #[inline]
     pub fn shrink_to_fit(&mut self) {
-        let fit_len = Self::raw_cap_from(self.len());
+        let fit_len = T::raw_cap_from(self.len());
         self.buf.shrink_to_fit(fit_len);
     }
 
@@ -373,7 +373,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// assert_eq!(v.get(2), 0b10);
     /// # }
     #[inline]
-    pub fn insert(&mut self, index: usize, element: Block) {
+    pub fn insert(&mut self, index: usize, element: T::Block) {
         self.align(index, index + 1);
         self.set(index, element);
     }
@@ -398,7 +398,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub fn remove(&mut self, index: usize) -> Block {
+    pub fn remove(&mut self, index: usize) -> T::Block {
         if index >= self.len {
             panic!("index is out of bounds");
         }
@@ -443,7 +443,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub fn swap_remove(&mut self, index: usize) -> Block {
+    pub fn swap_remove(&mut self, index: usize) -> T::Block {
         if index >= self.len {
             panic!("index is out of bounds");
         }
@@ -520,7 +520,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub fn bits(&self) -> usize {
-        self.len() * Self::nbits()
+        self.len() * T::nbits()
     }
 
     /// Total bits in buf.
@@ -529,7 +529,8 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// ```
     /// # extern crate nbits_vec;
-    /// # use nbits_vec::*;
+    /// # use nbits_vec::NbitsVec;
+    /// # use nbits_vec::consts::N2B64 as N2;
     /// # fn main() {
     /// let vec: NbitsVec<N2> = NbitsVec::with_capacity(10);
     /// assert_eq!(vec.cap_bits(), std::mem::size_of::<usize>() * 8);
@@ -537,7 +538,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// ```
     #[inline]
     pub fn cap_bits(&self) -> usize {
-        self.raw_cap() * Self::block_bits()
+        self.raw_cap() * T::block_bits()
     }
 
     /// Returns whether or not the vector is empty.
@@ -574,7 +575,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub fn push(&mut self, value: Block) {
+    pub fn push(&mut self, value: T::Block) {
         let len = self.len();
         if self.capacity() == len {
             self.reserve(1);
@@ -600,7 +601,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub fn pop(&mut self) -> Option<Block> {
+    pub fn pop(&mut self) -> Option<T::Block> {
         if self.len == 0 {
             None
         } else {
@@ -625,11 +626,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # fn main() {
     /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// vec.resize(10, 0);
-    /// # assert_eq!(vec.capacity(), std::mem::size_of::<usize>() * 8 / 2);
+    /// # assert_eq!(vec.capacity(), 12);
     /// # }
     /// ```
     #[inline]
-    pub fn resize(&mut self, new_len: usize, value: Block) {
+    pub fn resize(&mut self, new_len: usize, value: T::Block) {
         let len = self.len();
         if len < new_len {
             let n = new_len - len;
@@ -671,7 +672,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # extern crate nbits_vec;
     /// # use nbits_vec::*;
     /// # fn main() {
-    /// let mut vec: NbitsVec<N2, u8> = NbitsVec::new();
+    /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// // Prepare data.
     /// vec.resize(24, 0);
     /// vec.fill(0, 12, 1);
@@ -719,7 +720,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                 self.set(from + interval, value);
             }
             // Set interval values as 0.
-            self.fill(from, interval, Block::zero());
+            self.fill(from, interval, T::Block::zero());
         }
     }
 
@@ -731,7 +732,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # extern crate nbits_vec;
     /// # use nbits_vec::*;
     /// # fn main() {
-    /// let mut vec: NbitsVec<N2, u8> = NbitsVec::new();
+    /// let mut vec: NbitsVec<N2> = NbitsVec::new();
     /// vec.resize(24, 0);
     /// # println!("{:?}", vec);
     /// vec.fill(1, 2, 2); // length < buf_unit
@@ -745,7 +746,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub fn fill(&mut self, index: usize, length: usize, value: Block) {
+    pub fn fill(&mut self, index: usize, length: usize, value: T::Block) {
         for i in index..cmp::min(index + length, self.len) {
             unsafe { self.unchecked_set(i, value) }
         }
@@ -764,7 +765,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub fn set(&mut self, index: usize, value: Block) {
+    pub fn set(&mut self, index: usize, value: T::Block) {
         if index >= self.len {
             panic!("attempt to set at {} but only {}", index, self.len);
         }
@@ -773,24 +774,24 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
     // `set` the `index`th value as `value` without length checked.
     #[inline]
-    unsafe fn unchecked_set(&mut self, index: usize, value: Block) {
-        let nbits = Self::nbits();
+    unsafe fn unchecked_set(&mut self, index: usize, value: T::Block) {
+        let nbits = T::nbits();
         let offset = index * nbits;
         if nbits == 1 {
-            self.set_raw_bit(offset, value & Block::one() == Block::one());
+            self.set_raw_bit(offset, value & T::Block::one() == T::Block::one());
             return;
         }
-        let bi = Self::bit_index(offset);
-        if Self::is_packed() {
+        let bi = T::bit_index(offset);
+        if T::is_packed() {
             let ptr = self.buf.ptr().offset(bi as isize);
             ptr::write(ptr, value);
             return;
         }
-        let bo = Self::bit_offset(offset);
-        let bo2 = Self::bit_offset(offset + nbits);
-        let block_bits = Self::block_bits();
-        if Self::is_aligned() || bo < bo2 || bo2 == 0 {
-            let mask = Self::mask();
+        let bo = T::bit_offset(offset);
+        let bo2 = T::bit_offset(offset + nbits);
+        let block_bits = T::block_bits();
+        if T::is_aligned() || bo < bo2 || bo2 == 0 {
+            let mask = T::mask();
             let ptr = self.buf.ptr().offset(bi as isize);
             let ori = ptr::read(ptr);
             let new = ori & !(mask << bo) | ((value & mask) << bo);
@@ -798,10 +799,10 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
                 ptr::write(ptr, new);
             }
         } else {
-            let mask = Self::mask();
+            let mask = T::mask();
             let ptr = self.buf.ptr().offset(bi as isize);
             let ori = ptr::read(ptr);
-            let new = Block::zero()
+            let new = T::Block::zero()
                           .not()
                           .shr(block_bits - bo)
                           .bitand(ori)
@@ -830,7 +831,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     ///
     /// ## Examples
     ///
-    /// ```
+    /// ```no_run
     /// # extern crate nbits_vec;
     /// # use nbits_vec::*;
     /// # fn main() {
@@ -853,9 +854,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn set_raw_bits(&mut self, pos: usize, length: usize, value: Block) {
-        let block_bits = Self::block_bits();
-        let loc = Self::bit_loc(pos);
+    pub unsafe fn set_raw_bits(&mut self, pos: usize, length: usize, value: T::Block) {
+        let block_bits = T::block_bits();
+        let loc = T::bit_loc(pos);
         debug_assert!(length > 0 && length <= block_bits);
         // 1. Index out of bounds, but without panics or warnigns.
         if loc.0 >= self.raw_cap() {
@@ -868,11 +869,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
         // 2. One bit only.
         if length == 1 {
-            let mask = Block::one() << loc.1;
-            let old = (ori >> loc.1) & Block::one();
-            let new = value & Block::one();
+            let mask = T::Block::one() << loc.1;
+            let old = (ori >> loc.1) & T::Block::one();
+            let new = value & T::Block::one();
             if old != new {
-                if new == Block::one() {
+                if new == T::Block::one() {
                     ptr::write(ptr, ori | mask)
                 } else {
                     ptr::write(ptr, !mask & ori)
@@ -889,7 +890,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
 
         let remain = block_bits - length;
         // Value mask
-        let mask = !Block::zero() >> remain;
+        let mask = !T::Block::zero() >> remain;
         // 4.0. At the begining of the block
         if loc.1 == 0 {
             let new = value & mask | (ori & !mask);
@@ -925,14 +926,18 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
 
         // 5.3 No other condition should care.
-        let new = Block::zero().not().shr(block_bits - loc.1).bitand(ori).bitor(value.shl(loc.1));
+        let new = T::Block::zero()
+                      .not()
+                      .shr(block_bits - loc.1)
+                      .bitand(ori)
+                      .bitor(value.shl(loc.1));
         if ori != new {
             ptr::write(ptr, new);
         }
         let ptr = ptr.offset(1);
         let ori = ptr::read(ptr);
         let remain = block_bits - end_off;
-        let mask = Block::zero().not().shr(remain);
+        let mask = T::Block::zero().not().shr(remain);
         let new = value.shr(length - end_off).bitand(mask).bitor(mask.not().bitand(ori));
         if ori != new {
             ptr::write(ptr, new);
@@ -942,12 +947,12 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Set buf unit bit at `index`th unit of `offset`bit.
     #[inline]
     pub unsafe fn set_raw_bit(&mut self, offset: usize, bit: bool) {
-        let loc = Self::bit_loc(offset);
-        let mask = Block::one() << loc.1;
+        let loc = T::bit_loc(offset);
+        let mask = T::Block::one() << loc.1;
         let ptr = self.buf.ptr().offset(loc.0 as isize);
         let cur = ptr::read(ptr);
-        let old = cur >> loc.1 & Block::one();
-        match (old == Block::one(), bit) {
+        let old = cur >> loc.1 & T::Block::one();
+        match (old == T::Block::one(), bit) {
             (lhs, rhs) if lhs == rhs => (),
             (_, true) => ptr::write(ptr, cur | mask),
             (_, false) => ptr::write(ptr, cur & !mask),
@@ -969,23 +974,23 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub fn get(&self, index: usize) -> Block {
+    pub fn get(&self, index: usize) -> T::Block {
         if index >= self.len {
             panic!("index out of bounds: attempt to get at {} but only {}",
                    index,
                    self.len);
         }
-        let nbits = Self::nbits();
+        let nbits = T::nbits();
         let bit_pos = index * nbits;
-        let bi = Self::bit_index(bit_pos);
-        let bo = Self::bit_offset(bit_pos);
+        let bi = T::bit_index(bit_pos);
+        let bo = T::bit_offset(bit_pos);
         unsafe {
             let ptr = self.raw_ptr().offset(bi as isize);
             if nbits == 1 {
-                return ptr::read(ptr) >> bo & Block::one();
+                return ptr::read(ptr) >> bo & T::Block::one();
             }
-            let bo2 = Self::bit_offset(bit_pos + nbits);
-            let block_bits = Self::block_bits();
+            let bo2 = T::bit_offset(bit_pos + nbits);
+            let block_bits = T::block_bits();
             if bo2 == 0 {
                 ptr::read(ptr) >> (block_bits - nbits)
             } else if bo < bo2 {
@@ -1031,19 +1036,19 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// # }
     /// ```
     #[inline]
-    pub unsafe fn get_raw_bits(&self, pos: usize, length: usize) -> Block {
-        debug_assert!(length > 0 && length <= Self::block_bits());
-        let loc = Self::bit_loc(pos);
+    pub unsafe fn get_raw_bits(&self, pos: usize, length: usize) -> T::Block {
+        debug_assert!(length > 0 && length <= T::block_bits());
+        let loc = T::bit_loc(pos);
         // 1. Index out of bounds, but without panics or warnigns.
         if loc.0 >= self.raw_cap() {
-            return Block::zero();
+            return T::Block::zero();
         }
         let ptr = self.raw_ptr().offset(loc.0 as isize);
         // 2. One bit only.
         if length == 1 {
-            return ptr::read(ptr) >> loc.1 & Block::one();
+            return ptr::read(ptr) >> loc.1 & T::Block::one();
         }
-        let block_bits = Self::block_bits();
+        let block_bits = T::block_bits();
         // 3. If request pos and length is packed.
         if length == block_bits && loc.1 == 0 {
             return ptr::read(ptr);
@@ -1076,24 +1081,24 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Get raw bit at `pos`.
     #[inline]
     pub unsafe fn get_raw_bit(&self, pos: usize) -> bool {
-        self.get_raw_bits(pos, 1) == Block::one()
+        self.get_raw_bits(pos, 1) == T::Block::one()
     }
 
-    /// Returns mutable ptr of `Block`.
+    /// Returns mutable ptr of `T::Block`.
     #[inline]
-    pub fn raw_mut_ptr(&mut self) -> *mut Block {
+    pub fn raw_mut_ptr(&mut self) -> *mut T::Block {
         self.buf.ptr()
     }
 
-    /// Returns ptr of `Block`.
+    /// Returns ptr of `T::Block`.
     #[inline]
-    pub fn raw_ptr(&self) -> *const Block {
+    pub fn raw_ptr(&self) -> *const T::Block {
         self.buf.ptr()
     }
 
-    /// Return raw slice of `Block`.
+    /// Return raw slice of `T::Block`.
     #[inline]
-    pub fn as_raw_slice(&self) -> &[Block] {
+    pub fn as_raw_slice(&self) -> &[T::Block] {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
@@ -1101,9 +1106,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
     }
 
-    /// Returns mutable raw slice of `Block`.
+    /// Returns mutable raw slice of `T::Block`.
     #[inline]
-    pub fn as_mut_raw_slice(&mut self) -> &mut [Block] {
+    pub fn as_mut_raw_slice(&mut self) -> &mut [T::Block] {
         unsafe {
             let p = self.buf.ptr();
             debug_assert!(!p.is_null());
@@ -1111,9 +1116,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
     }
 
-    /// Returns raw boxed slice of `Block`.
+    /// Returns raw boxed slice of `T::Block`.
     #[inline]
-    pub fn into_raw_boxed_slice(mut self) -> Box<[Block]> {
+    pub fn into_raw_boxed_slice(mut self) -> Box<[T::Block]> {
         unsafe {
             self.shrink_to_fit();
             let buf = ptr::read(&self.buf);
@@ -1125,7 +1130,7 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
     /// Used capacity in `RawVec`.
     #[inline]
     fn used_raw_cap(&self) -> usize {
-        let loc = Self::bit_loc(self.bits());
+        let loc = T::bit_loc(self.bits());
         if loc.1 == 0 {
             loc.0
         } else {
@@ -1133,101 +1138,18 @@ impl<N: Unsigned + NonZero, Block: PrimInt> NbitsVec<N, Block> {
         }
     }
 
-    /// The `RawVec` buffer capacity(Block).
+    /// The `RawVec` buffer capacity(T::Block).
     #[inline]
     fn raw_cap(&self) -> usize {
         self.buf.cap()
     }
-
-    /// A `NbitsVec` is `aligned` when `block_bits` is divisible by `nbits`.
-    #[inline]
-    fn is_aligned() -> bool {
-        Self::block_bits() % Self::nbits() == 0
-    }
-
-    /// A `NbitsVec` is `packed` when `block_bits` is equal to `nbits`.
-    #[inline]
-    fn is_packed() -> bool {
-        Self::block_bits() == Self::nbits()
-    }
-
-    /// Converts capacity to storage size
-    #[inline]
-    fn raw_cap_from(cap: usize) -> usize {
-        let loc = Self::loc(cap);
-        if loc.1 == 0 {
-            loc.0
-        } else {
-            loc.0 + 1
-        }
-    }
-
-    /// Converts the storage size to capacity.
-    #[inline]
-    fn cap_from(raw_cap: usize) -> usize {
-        raw_cap * Self::block_bits() / Self::nbits()
-    }
-
-    /// Converts the vector index to buf `(index, offset)` tuple.
-    #[inline]
-    fn loc(index: usize) -> Loc {
-        let bits = index * Self::nbits();
-        let rbits = Self::block_bits();
-        (bits / rbits, bits % rbits)
-    }
-
-    /// Converts bit index to buf `BitLoc`.
-    #[inline]
-    fn bit_loc(bit: usize) -> BitLoc {
-        let rbits = Self::block_bits();
-        (bit / rbits, bit % rbits)
-    }
-
-    /// Returns block offset of bit position `bit`.
-    #[inline]
-    fn bit_offset(bit: usize) -> usize {
-        bit % Self::block_bits()
-    }
-
-    /// Returns block index of bit position `bit`.
-    #[inline]
-    fn bit_index(bit: usize) -> usize {
-        bit / Self::block_bits()
-    }
-
-    /// Returns size of `Block`.
-    #[inline]
-    fn block_bits() -> usize {
-        mem::size_of::<Block>() * 8
-    }
-
-    /// Returns `N` in usize.
-    #[inline]
-    pub fn nbits() -> usize {
-        N::to_usize()
-    }
-
-    /// Bit mask.
-    #[inline]
-    pub fn mask() -> Block {
-        Block::zero().not().shr(Self::block_bits() - Self::nbits())
-    }
-
-    #[inline]
-    fn check_if_n_valid() {
-        if Self::nbits() > Self::block_bits() {
-            panic!("`N` should be less than block's bits count, while your expect storing \
-                    `{}`bits in a `{}`bits block vector",
-                   Self::nbits(),
-                   Self::block_bits());
-        }
-    }
 }
 
-type Loc = (usize, usize);
-type BitLoc = Loc;
+impl<T: OneBit> NbitsVec<T> {}
+impl<T: Aligned> NbitsVec<T> {}
 
-impl<N: Unsigned + NonZero, Block: PrimInt> Default for NbitsVec<N, Block> {
+impl<T: ValueExt> Default for NbitsVec<T> {
+    #[inline]
     fn default() -> Self {
         NbitsVec {
             buf: RawVec::new(),
@@ -1237,11 +1159,11 @@ impl<N: Unsigned + NonZero, Block: PrimInt> Default for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N, Block> {
+impl<T: Value> Debug for NbitsVec<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f,
                     "NbitsVec<{}> {{ len: {}, buf: RawVec {{ cap: {}, [",
-                    N::to_usize(),
+                    T::nbits(),
                     self.len,
                     self.buf.cap()));
         let ptr = self.buf.ptr();
@@ -1254,14 +1176,14 @@ impl<N: Unsigned + NonZero, Block: PrimInt + fmt::LowerHex> Debug for NbitsVec<N
     }
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt + Hash> Hash for NbitsVec<N, Block> {
+impl<T: ValueExt> Hash for NbitsVec<T> {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         Hash::hash(self.as_raw_slice(), state);
     }
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
+impl<T: ValueExt> PartialEq for NbitsVec<T> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.len() == other.len() && self.as_raw_slice() == other.as_raw_slice()
@@ -1272,9 +1194,9 @@ impl<N: Unsigned + NonZero, Block: PrimInt> PartialEq for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt> Eq for NbitsVec<N, Block> {}
+impl<T: ValueExt> Eq for NbitsVec<T> {}
 
-impl<N: Unsigned + NonZero, Block: PrimInt> Clone for NbitsVec<N, Block> {
+impl<T: ValueExt> Clone for NbitsVec<T> {
     fn clone(&self) -> Self {
         let mut new = Self::with_capacity(self.len());
         unsafe {
@@ -1285,88 +1207,26 @@ impl<N: Unsigned + NonZero, Block: PrimInt> Clone for NbitsVec<N, Block> {
     }
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt> PartialOrd for NbitsVec<N, Block> {
+impl<T: ValueExt> PartialOrd for NbitsVec<T> {
     fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
         PartialOrd::partial_cmp(self.as_raw_slice(), other.as_raw_slice())
     }
 }
 
-impl<N: Unsigned + NonZero, Block: PrimInt> Ord for NbitsVec<N, Block> {
+impl<T: ValueExt> Ord for NbitsVec<T> {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         Ord::cmp(self.as_raw_slice(), other.as_raw_slice())
     }
 }
 
-unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Send for NbitsVec<N, Block> {}
+unsafe impl<T: ValueExt> Send for NbitsVec<T> {}
 
-unsafe impl<N: Unsigned + NonZero, Block: PrimInt> Sync for NbitsVec<N, Block> {}
+unsafe impl<T: ValueExt> Sync for NbitsVec<T> {}
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
-pub use typenum::consts::{
-    U1 as N1,
-    U2 as N2,
-    U3 as N3,
-    U4 as N4,
-    U5 as N5,
-    U6 as N6,
-    U7 as N7,
-    U8 as N8,
-    U9 as N9,
-    U10 as N10,
-    U11 as N11,
-    U12 as N12,
-    U13 as N13,
-    U14 as N14,
-    U15 as N15,
-    U16 as N16,
-    U17 as N17,
-    U18 as N18,
-    U19 as N19,
-    U20 as N20,
-    U21 as N21,
-    U22 as N22,
-    U23 as N23,
-    U24 as N24,
-    U25 as N25,
-    U26 as N26,
-    U27 as N27,
-    U28 as N28,
-    U29 as N29,
-    U30 as N30,
-    U31 as N31,
-    U32 as N32,
-    U33 as N33,
-    U34 as N34,
-    U35 as N35,
-    U36 as N36,
-    U37 as N37,
-    U38 as N38,
-    U39 as N39,
-    U40 as N40,
-    U41 as N41,
-    U42 as N42,
-    U43 as N43,
-    U44 as N44,
-    U45 as N45,
-    U46 as N46,
-    U47 as N47,
-    U48 as N48,
-    U49 as N49,
-    U50 as N50,
-    U51 as N51,
-    U52 as N52,
-    U53 as N53,
-    U54 as N54,
-    U55 as N55,
-    U56 as N56,
-    U57 as N57,
-    U58 as N58,
-    U59 as N59,
-    U60 as N60,
-    U61 as N61,
-    U62 as N62,
-    U63 as N63,
-};
+pub type N1 = consts::N1B8;
+pub type N2 = consts::N2B8;
+pub type N3 = consts::N3B8;
+pub type N4 = consts::N4B8;
 
 #[cfg(test)]
 mod tests;

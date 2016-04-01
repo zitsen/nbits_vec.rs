@@ -1,56 +1,57 @@
 macro_rules! generate_test {
-    ( $(($m: ident $nbits: ident => $($block: ident)*)) * ) => {
+    ( $(($m: ident, $($nbits: ident => $block: ident),*)) * ) => {
         $(
             mod $m {
                 $(
                     mod $block {
-                        use num::{Zero, One};
-                        use ::{NbitsVec, $nbits};
-                        type NV = NbitsVec<$nbits, $block>;
+                        use ::NbitsVec;
+                        pub use ::value::*;
+                        pub use ::consts::$nbits;
+                        pub type NV = NbitsVec<$nbits>;
 
-                        fn mask(n: usize) -> $block {
-                            (0..n).fold($block::zero(), |b, _x| b << 1 | $block::one())
+                        pub fn mask(n: usize) -> $block {
+                            (0..n).fold(0, |b, _x| b << 1 | 1)
                         }
 
                         mod struct_static {
                             use ::std::mem::size_of;
-                            use super::{mask, NV};
+                            use super::*;
 
                             #[test]
                             fn nbits() {
-                                assert!(NV::nbits() > 0);
+                                assert!($nbits::nbits() > 0);
                             }
 
                             #[test]
                             fn block_bits() {
-                                assert_eq!(NV::block_bits(), size_of::<$block>() * 8);
+                                assert_eq!($nbits::block_bits(), size_of::<$block>() * 8);
                             }
 
                             #[test]
                             fn bit_loc() {
-                                assert_eq!(NV::bit_loc(0), (0, 0));
-                                assert_eq!(NV::bit_loc(1), (0, 1));
-                                let block_bits = NV::block_bits();
+                                assert_eq!($nbits::bit_loc(0), (0, 0));
+                                assert_eq!($nbits::bit_loc(1), (0, 1));
+                                let block_bits = $nbits::block_bits();
                                 for i in 3..79 {
-                                    assert_eq!(NV::bit_loc(i),
+                                    assert_eq!($nbits::bit_loc(i),
                                                 (i / block_bits, i % block_bits));
                                 }
                             }
 
                             #[test]
                             fn mask_ok() {
-                                assert_eq!(NV::mask(), mask(NV::nbits()));
+                                assert_eq!($nbits::mask(), mask($nbits::nbits()));
                             }
 
                         }
                         mod private_api {
-                            use super::{mask, NV};
+                            use super::*;
 
                             #[test]
                             fn raw_bit() {
                                 let mut vec = NV::with_capacity(100);
                                 unsafe {
-                                    for i in 0..(100 * NV::nbits()) {
+                                    for i in 0..(100 * $nbits::nbits()) {
                                         vec.set_raw_bit(i, true);
                                         assert_eq!(vec.get_raw_bit(i), true);
                                         vec.set_raw_bit(i, false);
@@ -64,14 +65,14 @@ macro_rules! generate_test {
                                 let mut vec = NV::with_capacity(100);
                                 unsafe {
                                     for n in 2..8 {
-                                        for i in 0..(100 * NV::nbits() - n) {
+                                        for i in 0..(100 * $nbits::nbits() - n) {
                                             vec.set_raw_bits(i, n, 0b1001);
                                             println!("N = {}, i = {}", n, i);
                                             vec.get_raw_bits(i, n);
                                             assert_eq!(vec.get_raw_bits(i, n), 0b1001 & mask(n));
                                         }
                                         for i in 0..n {
-                                            let j = 100 * NV::nbits() - i;
+                                            let j = 100 * $nbits::nbits() - i;
                                             vec.get_raw_bits(j, n);
                                         }
                                     }
@@ -99,7 +100,7 @@ macro_rules! generate_test {
                             }
                         }
                         mod public_api {
-                            use super::{NV};
+                            use super::*;
 
                             #[test]
                             fn new() {
@@ -168,7 +169,8 @@ macro_rules! generate_test {
                                 for i in 0..500 {
                                     vec.fill(i, i, 0b111001 >> (i / 100));
                                     for j in (i..).take(i) {
-                                        assert_eq!(vec.get(j), 0b111001 >> (i / 100) & NV::mask());
+                                        assert_eq!(vec.get(j),
+                                        0b111001 >> (i / 100) & $nbits::mask());
                                     }
                                 }
                             }
@@ -190,8 +192,7 @@ macro_rules! generate_test {
                         }
 
                         mod threadsafe {
-                            use ::{NbitsVec, $nbits};
-                            type NV = NbitsVec<$nbits, $block>;
+                            use super::*;
 
                             #[test]
                             fn new() {
@@ -233,47 +234,11 @@ macro_rules! generate_test {
 }
 
 generate_test! {
-    (n1 N1 => u8 u16 u32 u64 usize)
-    (n2 N2 => u8 u16 u32 u64 usize)
-    (n3 N3 => u8 u16 u32 u64 usize)
-    (n4 N4 => u8 u16 u32 u64 usize)
-    (n8 N8 => u8 u16 u32 u64 usize)
-}
-
-macro_rules! panic_test {
-    ( $(($m: ident $nbits: ident => $($block: ident)*)) * ) => {
-        $(
-            mod $m {
-                $(
-                    mod $block {
-                        use ::{NbitsVec, $nbits};
-                        type NV = NbitsVec<$nbits, $block>;
-                        #[test]
-                        #[should_panic]
-                        fn panic_new() {
-                            NV::new();
-                        }
-                        #[test]
-                        #[should_panic]
-                        fn panic_with_capacity() {
-                            NV::with_capacity(10);
-                        }
-                        #[test]
-                        #[should_panic]
-                        fn panic_from_raw_parts() {
-                            unsafe {
-                                NV::from_raw_parts(::std::ptr::null_mut(), 0, 0);
-                            }
-                        }
-                    }
-                 )*
-            }
-         )*
-    }
-}
-
-panic_test! {
-    (n9 N9 => u8)
-    (n17 N17 => u8 u16)
-    (n33 N33 => u8 u16 u32)
+    (n1, N1B8 => u8, N1B16 => u16, N1B32 => u32, N1B64 => u64)
+    (n2, N2B8 => u8, N2B16 => u16, N2B32 => u32, N2B64 => u64)
+    (n3, N3B8 => u8, N3B16 => u16, N3B32 => u32, N3B64 => u64)
+    (n4, N4B8 => u8, N4B16 => u16, N4B32 => u32, N4B64 => u64)
+    (n5, N5B8 => u8, N5B16 => u16, N5B32 => u32, N5B64 => u64)
+    (n6, N6B8 => u8, N6B16 => u16, N6B32 => u32, N6B64 => u64)
+    (n7, N7B8 => u8, N7B16 => u16, N7B32 => u32, N7B64 => u64)
 }
