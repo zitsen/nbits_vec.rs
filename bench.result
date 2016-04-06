@@ -1,0 +1,557 @@
+   Compiling nbits_vec v0.1.1 (file:///home/huolinhe/Projects/Rust/nbits_vec)
+     Running target/release/bench-9a8b9b56e066af11
+
+running 96 tests
+test tests::align::test_1bits_u16::align  ... bench:         281 ns/iter (+/- 14)
+test tests::align::test_1bits_u32::align  ... bench:         296 ns/iter (+/- 43)
+test tests::align::test_1bits_u64::align  ... bench:         287 ns/iter (+/- 25)
+test tests::align::test_1bits_u8::align   ... bench:         289 ns/iter (+/- 14)
+test tests::align::test_2bits_u16::align  ... bench:         353 ns/iter (+/- 7)
+test tests::align::test_2bits_u32::align  ... bench:         384 ns/iter (+/- 27)
+test tests::align::test_2bits_u64::align  ... bench:         370 ns/iter (+/- 36)
+test tests::align::test_2bits_u8::align   ... bench:         378 ns/iter (+/- 248)
+test tests::align::test_3bits_u16::align  ... bench:         423 ns/iter (+/- 15)
+test tests::align::test_3bits_u32::align  ... bench:         389 ns/iter (+/- 53)
+test tests::align::test_3bits_u64::align  ... bench:         384 ns/iter (+/- 90)
+test tests::align::test_3bits_u8::align   ... bench:         438 ns/iter (+/- 14)
+test tests::align::test_4bits_u16::align  ... bench:         343 ns/iter (+/- 69)
+test tests::align::test_4bits_u32::align  ... bench:         382 ns/iter (+/- 54)
+test tests::align::test_4bits_u64::align  ... bench:         342 ns/iter (+/- 19)
+test tests::align::test_4bits_u8::align   ... bench:         300 ns/iter (+/- 63)
+test tests::get::test_1bits_u16::bench    ... bench:         285 ns/iter (+/- 14)
+test tests::get::test_1bits_u32::bench    ... bench:         303 ns/iter (+/- 24)
+test tests::get::test_1bits_u64::bench    ... bench:         287 ns/iter (+/- 14)
+test tests::get::test_1bits_u8::bench     ... bench:         300 ns/iter (+/- 13)
+test tests::get::test_2bits_u16::bench    ... bench:         282 ns/iter (+/- 14)
+test tests::get::test_2bits_u32::bench    ... bench:         284 ns/iter (+/- 26)
+test tests::get::test_2bits_u64::bench    ... bench:         289 ns/iter (+/- 15)
+test tests::get::test_2bits_u8::bench     ... bench:         296 ns/iter (+/- 28)
+test tests::get::test_3bits_u16::bench    ... bench:         284 ns/iter (+/- 26)
+test tests::get::test_3bits_u32::bench    ... bench:         312 ns/iter (+/- 39)
+test tests::get::test_3bits_u64::bench    ... bench:         287 ns/iter (+/- 32)
+test tests::get::test_3bits_u8::bench     ... bench:         300 ns/iter (+/- 16)
+test tests::get::test_4bits_u16::bench    ... bench:         300 ns/iter (+/- 8)
+test tests::get::test_4bits_u32::bench    ... bench:         300 ns/iter (+/- 12)
+test tests::get::test_4bits_u64::bench    ... bench:         300 ns/iter (+/- 43)
+test tests::get::test_4bits_u8::bench     ... bench:         284 ns/iter (+/- 16)
+test tests::new::test_1bits_u16::bench    ... bench:          14 ns/iter (+/- 1)
+test tests::new::test_1bits_u32::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_1bits_u64::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_1bits_u8::bench     ... bench:          14 ns/iter (+/- 1)
+test tests::new::test_2bits_u16::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_2bits_u32::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_2bits_u64::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_2bits_u8::bench     ... bench:          14 ns/iter (+/- 1)
+test tests::new::test_3bits_u16::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_3bits_u32::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_3bits_u64::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_3bits_u8::bench     ... bench:          15 ns/iter (+/- 1)
+test tests::new::test_4bits_u16::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_4bits_u32::bench    ... bench:          15 ns/iter (+/- 0)
+test tests::new::test_4bits_u64::bench    ... bench:          15 ns/iter (+/- 1)
+test tests::new::test_4bits_u8::bench     ... bench:          15 ns/iter (+/- 1)
+test tests::push::test_1bits_u16::push    ... bench:       2,118 ns/iter (+/- 249)
+test tests::push::test_1bits_u32::push    ... bench:       1,868 ns/iter (+/- 229)
+test tests::push::test_1bits_u64::push    ... bench:       1,855 ns/iter (+/- 243)
+test tests::push::test_1bits_u8::push     ... bench:       1,888 ns/iter (+/- 129)
+test tests::push::test_2bits_u16::push    ... bench:       2,384 ns/iter (+/- 364)
+test tests::push::test_2bits_u32::push    ... bench:       2,212 ns/iter (+/- 157)
+test tests::push::test_2bits_u64::push    ... bench:       2,501 ns/iter (+/- 87)
+test tests::push::test_2bits_u8::push     ... bench:       2,533 ns/iter (+/- 271)
+test tests::push::test_3bits_u16::push    ... bench:       3,325 ns/iter (+/- 806)
+test tests::push::test_3bits_u32::push    ... bench:       3,113 ns/iter (+/- 459)
+test tests::push::test_3bits_u64::push    ... bench:       3,163 ns/iter (+/- 346)
+test tests::push::test_3bits_u8::push     ... bench:       4,020 ns/iter (+/- 1,583)
+test tests::push::test_4bits_u16::push    ... bench:       2,641 ns/iter (+/- 256)
+test tests::push::test_4bits_u32::push    ... bench:       2,487 ns/iter (+/- 154)
+test tests::push::test_4bits_u64::push    ... bench:       2,600 ns/iter (+/- 262)
+test tests::push::test_4bits_u8::push     ... bench:       2,629 ns/iter (+/- 629)
+test tests::resize::test_1bits_u16::bench ... bench:       3,889 ns/iter (+/- 526)
+test tests::resize::test_1bits_u32::bench ... bench:       2,927 ns/iter (+/- 332)
+test tests::resize::test_1bits_u64::bench ... bench:       2,295 ns/iter (+/- 205)
+test tests::resize::test_1bits_u8::bench  ... bench:       3,702 ns/iter (+/- 204)
+test tests::resize::test_2bits_u16::bench ... bench:       3,738 ns/iter (+/- 330)
+test tests::resize::test_2bits_u32::bench ... bench:       3,644 ns/iter (+/- 107)
+test tests::resize::test_2bits_u64::bench ... bench:       2,910 ns/iter (+/- 171)
+test tests::resize::test_2bits_u8::bench  ... bench:       3,552 ns/iter (+/- 386)
+test tests::resize::test_3bits_u16::bench ... bench:       4,283 ns/iter (+/- 216)
+test tests::resize::test_3bits_u32::bench ... bench:       4,251 ns/iter (+/- 390)
+test tests::resize::test_3bits_u64::bench ... bench:       4,165 ns/iter (+/- 354)
+test tests::resize::test_3bits_u8::bench  ... bench:       4,231 ns/iter (+/- 1,944)
+test tests::resize::test_4bits_u16::bench ... bench:       3,795 ns/iter (+/- 119)
+test tests::resize::test_4bits_u32::bench ... bench:       3,920 ns/iter (+/- 403)
+test tests::resize::test_4bits_u64::bench ... bench:       3,784 ns/iter (+/- 238)
+test tests::resize::test_4bits_u8::bench  ... bench:       3,839 ns/iter (+/- 353)
+test tests::set::test_1bits_u16::bench    ... bench:       1,178 ns/iter (+/- 72)
+test tests::set::test_1bits_u32::bench    ... bench:       1,220 ns/iter (+/- 134)
+test tests::set::test_1bits_u64::bench    ... bench:       1,189 ns/iter (+/- 79)
+test tests::set::test_1bits_u8::bench     ... bench:       1,182 ns/iter (+/- 41)
+test tests::set::test_2bits_u16::bench    ... bench:       1,692 ns/iter (+/- 30)
+test tests::set::test_2bits_u32::bench    ... bench:       1,693 ns/iter (+/- 718)
+test tests::set::test_2bits_u64::bench    ... bench:       1,693 ns/iter (+/- 162)
+test tests::set::test_2bits_u8::bench     ... bench:       2,601 ns/iter (+/- 243)
+test tests::set::test_3bits_u16::bench    ... bench:       2,461 ns/iter (+/- 53)
+test tests::set::test_3bits_u32::bench    ... bench:       2,380 ns/iter (+/- 142)
+test tests::set::test_3bits_u64::bench    ... bench:       2,428 ns/iter (+/- 266)
+test tests::set::test_3bits_u8::bench     ... bench:       2,761 ns/iter (+/- 141)
+test tests::set::test_4bits_u16::bench    ... bench:       1,693 ns/iter (+/- 684)
+test tests::set::test_4bits_u32::bench    ... bench:       1,715 ns/iter (+/- 351)
+test tests::set::test_4bits_u64::bench    ... bench:       1,710 ns/iter (+/- 129)
+test tests::set::test_4bits_u8::bench     ... bench:       1,715 ns/iter (+/- 109)
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 96 measured
+
+     Running target/release/nbits_vec-7d1a5cdc2774610c
+
+running 448 tests
+test tests::n1::u16::private_api::get_raw_bits ... ignored
+test tests::n1::u16::private_api::raw_bit ... ignored
+test tests::n1::u16::private_api::raw_bits ... ignored
+test tests::n1::u16::public_api::align ... ignored
+test tests::n1::u16::public_api::fill ... ignored
+test tests::n1::u16::public_api::get_set ... ignored
+test tests::n1::u16::public_api::new ... ignored
+test tests::n1::u16::public_api::push_pop ... ignored
+test tests::n1::u16::public_api::resize ... ignored
+test tests::n1::u16::public_api::resize_large ... ignored
+test tests::n1::u16::struct_static::bit_loc ... ignored
+test tests::n1::u16::struct_static::block_bits ... ignored
+test tests::n1::u16::struct_static::mask_ok ... ignored
+test tests::n1::u16::struct_static::nbits ... ignored
+test tests::n1::u16::threadsafe::new ... ignored
+test tests::n1::u16::threadsafe::with_capacity ... ignored
+test tests::n1::u32::private_api::get_raw_bits ... ignored
+test tests::n1::u32::private_api::raw_bit ... ignored
+test tests::n1::u32::private_api::raw_bits ... ignored
+test tests::n1::u32::public_api::align ... ignored
+test tests::n1::u32::public_api::fill ... ignored
+test tests::n1::u32::public_api::get_set ... ignored
+test tests::n1::u32::public_api::new ... ignored
+test tests::n1::u32::public_api::push_pop ... ignored
+test tests::n1::u32::public_api::resize ... ignored
+test tests::n1::u32::public_api::resize_large ... ignored
+test tests::n1::u32::struct_static::bit_loc ... ignored
+test tests::n1::u32::struct_static::block_bits ... ignored
+test tests::n1::u32::struct_static::mask_ok ... ignored
+test tests::n1::u32::struct_static::nbits ... ignored
+test tests::n1::u32::threadsafe::new ... ignored
+test tests::n1::u32::threadsafe::with_capacity ... ignored
+test tests::n1::u64::private_api::get_raw_bits ... ignored
+test tests::n1::u64::private_api::raw_bit ... ignored
+test tests::n1::u64::private_api::raw_bits ... ignored
+test tests::n1::u64::public_api::align ... ignored
+test tests::n1::u64::public_api::fill ... ignored
+test tests::n1::u64::public_api::get_set ... ignored
+test tests::n1::u64::public_api::new ... ignored
+test tests::n1::u64::public_api::push_pop ... ignored
+test tests::n1::u64::public_api::resize ... ignored
+test tests::n1::u64::public_api::resize_large ... ignored
+test tests::n1::u64::struct_static::bit_loc ... ignored
+test tests::n1::u64::struct_static::block_bits ... ignored
+test tests::n1::u64::struct_static::mask_ok ... ignored
+test tests::n1::u64::struct_static::nbits ... ignored
+test tests::n1::u64::threadsafe::new ... ignored
+test tests::n1::u64::threadsafe::with_capacity ... ignored
+test tests::n1::u8::private_api::get_raw_bits ... ignored
+test tests::n1::u8::private_api::raw_bit ... ignored
+test tests::n1::u8::private_api::raw_bits ... ignored
+test tests::n1::u8::public_api::align ... ignored
+test tests::n1::u8::public_api::fill ... ignored
+test tests::n1::u8::public_api::get_set ... ignored
+test tests::n1::u8::public_api::new ... ignored
+test tests::n1::u8::public_api::push_pop ... ignored
+test tests::n1::u8::public_api::resize ... ignored
+test tests::n1::u8::public_api::resize_large ... ignored
+test tests::n1::u8::struct_static::bit_loc ... ignored
+test tests::n1::u8::struct_static::block_bits ... ignored
+test tests::n1::u8::struct_static::mask_ok ... ignored
+test tests::n1::u8::struct_static::nbits ... ignored
+test tests::n1::u8::threadsafe::new ... ignored
+test tests::n1::u8::threadsafe::with_capacity ... ignored
+test tests::n2::u16::private_api::get_raw_bits ... ignored
+test tests::n2::u16::private_api::raw_bit ... ignored
+test tests::n2::u16::private_api::raw_bits ... ignored
+test tests::n2::u16::public_api::align ... ignored
+test tests::n2::u16::public_api::fill ... ignored
+test tests::n2::u16::public_api::get_set ... ignored
+test tests::n2::u16::public_api::new ... ignored
+test tests::n2::u16::public_api::push_pop ... ignored
+test tests::n2::u16::public_api::resize ... ignored
+test tests::n2::u16::public_api::resize_large ... ignored
+test tests::n2::u16::struct_static::bit_loc ... ignored
+test tests::n2::u16::struct_static::block_bits ... ignored
+test tests::n2::u16::struct_static::mask_ok ... ignored
+test tests::n2::u16::struct_static::nbits ... ignored
+test tests::n2::u16::threadsafe::new ... ignored
+test tests::n2::u16::threadsafe::with_capacity ... ignored
+test tests::n2::u32::private_api::get_raw_bits ... ignored
+test tests::n2::u32::private_api::raw_bit ... ignored
+test tests::n2::u32::private_api::raw_bits ... ignored
+test tests::n2::u32::public_api::align ... ignored
+test tests::n2::u32::public_api::fill ... ignored
+test tests::n2::u32::public_api::get_set ... ignored
+test tests::n2::u32::public_api::new ... ignored
+test tests::n2::u32::public_api::push_pop ... ignored
+test tests::n2::u32::public_api::resize ... ignored
+test tests::n2::u32::public_api::resize_large ... ignored
+test tests::n2::u32::struct_static::bit_loc ... ignored
+test tests::n2::u32::struct_static::block_bits ... ignored
+test tests::n2::u32::struct_static::mask_ok ... ignored
+test tests::n2::u32::struct_static::nbits ... ignored
+test tests::n2::u32::threadsafe::new ... ignored
+test tests::n2::u32::threadsafe::with_capacity ... ignored
+test tests::n2::u64::private_api::get_raw_bits ... ignored
+test tests::n2::u64::private_api::raw_bit ... ignored
+test tests::n2::u64::private_api::raw_bits ... ignored
+test tests::n2::u64::public_api::align ... ignored
+test tests::n2::u64::public_api::fill ... ignored
+test tests::n2::u64::public_api::get_set ... ignored
+test tests::n2::u64::public_api::new ... ignored
+test tests::n2::u64::public_api::push_pop ... ignored
+test tests::n2::u64::public_api::resize ... ignored
+test tests::n2::u64::public_api::resize_large ... ignored
+test tests::n2::u64::struct_static::bit_loc ... ignored
+test tests::n2::u64::struct_static::block_bits ... ignored
+test tests::n2::u64::struct_static::mask_ok ... ignored
+test tests::n2::u64::struct_static::nbits ... ignored
+test tests::n2::u64::threadsafe::new ... ignored
+test tests::n2::u64::threadsafe::with_capacity ... ignored
+test tests::n2::u8::private_api::get_raw_bits ... ignored
+test tests::n2::u8::private_api::raw_bit ... ignored
+test tests::n2::u8::private_api::raw_bits ... ignored
+test tests::n2::u8::public_api::align ... ignored
+test tests::n2::u8::public_api::fill ... ignored
+test tests::n2::u8::public_api::get_set ... ignored
+test tests::n2::u8::public_api::new ... ignored
+test tests::n2::u8::public_api::push_pop ... ignored
+test tests::n2::u8::public_api::resize ... ignored
+test tests::n2::u8::public_api::resize_large ... ignored
+test tests::n2::u8::struct_static::bit_loc ... ignored
+test tests::n2::u8::struct_static::block_bits ... ignored
+test tests::n2::u8::struct_static::mask_ok ... ignored
+test tests::n2::u8::struct_static::nbits ... ignored
+test tests::n2::u8::threadsafe::new ... ignored
+test tests::n2::u8::threadsafe::with_capacity ... ignored
+test tests::n3::u16::private_api::get_raw_bits ... ignored
+test tests::n3::u16::private_api::raw_bit ... ignored
+test tests::n3::u16::private_api::raw_bits ... ignored
+test tests::n3::u16::public_api::align ... ignored
+test tests::n3::u16::public_api::fill ... ignored
+test tests::n3::u16::public_api::get_set ... ignored
+test tests::n3::u16::public_api::new ... ignored
+test tests::n3::u16::public_api::push_pop ... ignored
+test tests::n3::u16::public_api::resize ... ignored
+test tests::n3::u16::public_api::resize_large ... ignored
+test tests::n3::u16::struct_static::bit_loc ... ignored
+test tests::n3::u16::struct_static::block_bits ... ignored
+test tests::n3::u16::struct_static::mask_ok ... ignored
+test tests::n3::u16::struct_static::nbits ... ignored
+test tests::n3::u16::threadsafe::new ... ignored
+test tests::n3::u16::threadsafe::with_capacity ... ignored
+test tests::n3::u32::private_api::get_raw_bits ... ignored
+test tests::n3::u32::private_api::raw_bit ... ignored
+test tests::n3::u32::private_api::raw_bits ... ignored
+test tests::n3::u32::public_api::align ... ignored
+test tests::n3::u32::public_api::fill ... ignored
+test tests::n3::u32::public_api::get_set ... ignored
+test tests::n3::u32::public_api::new ... ignored
+test tests::n3::u32::public_api::push_pop ... ignored
+test tests::n3::u32::public_api::resize ... ignored
+test tests::n3::u32::public_api::resize_large ... ignored
+test tests::n3::u32::struct_static::bit_loc ... ignored
+test tests::n3::u32::struct_static::block_bits ... ignored
+test tests::n3::u32::struct_static::mask_ok ... ignored
+test tests::n3::u32::struct_static::nbits ... ignored
+test tests::n3::u32::threadsafe::new ... ignored
+test tests::n3::u32::threadsafe::with_capacity ... ignored
+test tests::n3::u64::private_api::get_raw_bits ... ignored
+test tests::n3::u64::private_api::raw_bit ... ignored
+test tests::n3::u64::private_api::raw_bits ... ignored
+test tests::n3::u64::public_api::align ... ignored
+test tests::n3::u64::public_api::fill ... ignored
+test tests::n3::u64::public_api::get_set ... ignored
+test tests::n3::u64::public_api::new ... ignored
+test tests::n3::u64::public_api::push_pop ... ignored
+test tests::n3::u64::public_api::resize ... ignored
+test tests::n3::u64::public_api::resize_large ... ignored
+test tests::n3::u64::struct_static::bit_loc ... ignored
+test tests::n3::u64::struct_static::block_bits ... ignored
+test tests::n3::u64::struct_static::mask_ok ... ignored
+test tests::n3::u64::struct_static::nbits ... ignored
+test tests::n3::u64::threadsafe::new ... ignored
+test tests::n3::u64::threadsafe::with_capacity ... ignored
+test tests::n3::u8::private_api::get_raw_bits ... ignored
+test tests::n3::u8::private_api::raw_bit ... ignored
+test tests::n3::u8::private_api::raw_bits ... ignored
+test tests::n3::u8::public_api::align ... ignored
+test tests::n3::u8::public_api::fill ... ignored
+test tests::n3::u8::public_api::get_set ... ignored
+test tests::n3::u8::public_api::new ... ignored
+test tests::n3::u8::public_api::push_pop ... ignored
+test tests::n3::u8::public_api::resize ... ignored
+test tests::n3::u8::public_api::resize_large ... ignored
+test tests::n3::u8::struct_static::bit_loc ... ignored
+test tests::n3::u8::struct_static::block_bits ... ignored
+test tests::n3::u8::struct_static::mask_ok ... ignored
+test tests::n3::u8::struct_static::nbits ... ignored
+test tests::n3::u8::threadsafe::new ... ignored
+test tests::n3::u8::threadsafe::with_capacity ... ignored
+test tests::n4::u16::private_api::get_raw_bits ... ignored
+test tests::n4::u16::private_api::raw_bit ... ignored
+test tests::n4::u16::private_api::raw_bits ... ignored
+test tests::n4::u16::public_api::align ... ignored
+test tests::n4::u16::public_api::fill ... ignored
+test tests::n4::u16::public_api::get_set ... ignored
+test tests::n4::u16::public_api::new ... ignored
+test tests::n4::u16::public_api::push_pop ... ignored
+test tests::n4::u16::public_api::resize ... ignored
+test tests::n4::u16::public_api::resize_large ... ignored
+test tests::n4::u16::struct_static::bit_loc ... ignored
+test tests::n4::u16::struct_static::block_bits ... ignored
+test tests::n4::u16::struct_static::mask_ok ... ignored
+test tests::n4::u16::struct_static::nbits ... ignored
+test tests::n4::u16::threadsafe::new ... ignored
+test tests::n4::u16::threadsafe::with_capacity ... ignored
+test tests::n4::u32::private_api::get_raw_bits ... ignored
+test tests::n4::u32::private_api::raw_bit ... ignored
+test tests::n4::u32::private_api::raw_bits ... ignored
+test tests::n4::u32::public_api::align ... ignored
+test tests::n4::u32::public_api::fill ... ignored
+test tests::n4::u32::public_api::get_set ... ignored
+test tests::n4::u32::public_api::new ... ignored
+test tests::n4::u32::public_api::push_pop ... ignored
+test tests::n4::u32::public_api::resize ... ignored
+test tests::n4::u32::public_api::resize_large ... ignored
+test tests::n4::u32::struct_static::bit_loc ... ignored
+test tests::n4::u32::struct_static::block_bits ... ignored
+test tests::n4::u32::struct_static::mask_ok ... ignored
+test tests::n4::u32::struct_static::nbits ... ignored
+test tests::n4::u32::threadsafe::new ... ignored
+test tests::n4::u32::threadsafe::with_capacity ... ignored
+test tests::n4::u64::private_api::get_raw_bits ... ignored
+test tests::n4::u64::private_api::raw_bit ... ignored
+test tests::n4::u64::private_api::raw_bits ... ignored
+test tests::n4::u64::public_api::align ... ignored
+test tests::n4::u64::public_api::fill ... ignored
+test tests::n4::u64::public_api::get_set ... ignored
+test tests::n4::u64::public_api::new ... ignored
+test tests::n4::u64::public_api::push_pop ... ignored
+test tests::n4::u64::public_api::resize ... ignored
+test tests::n4::u64::public_api::resize_large ... ignored
+test tests::n4::u64::struct_static::bit_loc ... ignored
+test tests::n4::u64::struct_static::block_bits ... ignored
+test tests::n4::u64::struct_static::mask_ok ... ignored
+test tests::n4::u64::struct_static::nbits ... ignored
+test tests::n4::u64::threadsafe::new ... ignored
+test tests::n4::u64::threadsafe::with_capacity ... ignored
+test tests::n4::u8::private_api::get_raw_bits ... ignored
+test tests::n4::u8::private_api::raw_bit ... ignored
+test tests::n4::u8::private_api::raw_bits ... ignored
+test tests::n4::u8::public_api::align ... ignored
+test tests::n4::u8::public_api::fill ... ignored
+test tests::n4::u8::public_api::get_set ... ignored
+test tests::n4::u8::public_api::new ... ignored
+test tests::n4::u8::public_api::push_pop ... ignored
+test tests::n4::u8::public_api::resize ... ignored
+test tests::n4::u8::public_api::resize_large ... ignored
+test tests::n4::u8::struct_static::bit_loc ... ignored
+test tests::n4::u8::struct_static::block_bits ... ignored
+test tests::n4::u8::struct_static::mask_ok ... ignored
+test tests::n4::u8::struct_static::nbits ... ignored
+test tests::n4::u8::threadsafe::new ... ignored
+test tests::n4::u8::threadsafe::with_capacity ... ignored
+test tests::n5::u16::private_api::get_raw_bits ... ignored
+test tests::n5::u16::private_api::raw_bit ... ignored
+test tests::n5::u16::private_api::raw_bits ... ignored
+test tests::n5::u16::public_api::align ... ignored
+test tests::n5::u16::public_api::fill ... ignored
+test tests::n5::u16::public_api::get_set ... ignored
+test tests::n5::u16::public_api::new ... ignored
+test tests::n5::u16::public_api::push_pop ... ignored
+test tests::n5::u16::public_api::resize ... ignored
+test tests::n5::u16::public_api::resize_large ... ignored
+test tests::n5::u16::struct_static::bit_loc ... ignored
+test tests::n5::u16::struct_static::block_bits ... ignored
+test tests::n5::u16::struct_static::mask_ok ... ignored
+test tests::n5::u16::struct_static::nbits ... ignored
+test tests::n5::u16::threadsafe::new ... ignored
+test tests::n5::u16::threadsafe::with_capacity ... ignored
+test tests::n5::u32::private_api::get_raw_bits ... ignored
+test tests::n5::u32::private_api::raw_bit ... ignored
+test tests::n5::u32::private_api::raw_bits ... ignored
+test tests::n5::u32::public_api::align ... ignored
+test tests::n5::u32::public_api::fill ... ignored
+test tests::n5::u32::public_api::get_set ... ignored
+test tests::n5::u32::public_api::new ... ignored
+test tests::n5::u32::public_api::push_pop ... ignored
+test tests::n5::u32::public_api::resize ... ignored
+test tests::n5::u32::public_api::resize_large ... ignored
+test tests::n5::u32::struct_static::bit_loc ... ignored
+test tests::n5::u32::struct_static::block_bits ... ignored
+test tests::n5::u32::struct_static::mask_ok ... ignored
+test tests::n5::u32::struct_static::nbits ... ignored
+test tests::n5::u32::threadsafe::new ... ignored
+test tests::n5::u32::threadsafe::with_capacity ... ignored
+test tests::n5::u64::private_api::get_raw_bits ... ignored
+test tests::n5::u64::private_api::raw_bit ... ignored
+test tests::n5::u64::private_api::raw_bits ... ignored
+test tests::n5::u64::public_api::align ... ignored
+test tests::n5::u64::public_api::fill ... ignored
+test tests::n5::u64::public_api::get_set ... ignored
+test tests::n5::u64::public_api::new ... ignored
+test tests::n5::u64::public_api::push_pop ... ignored
+test tests::n5::u64::public_api::resize ... ignored
+test tests::n5::u64::public_api::resize_large ... ignored
+test tests::n5::u64::struct_static::bit_loc ... ignored
+test tests::n5::u64::struct_static::block_bits ... ignored
+test tests::n5::u64::struct_static::mask_ok ... ignored
+test tests::n5::u64::struct_static::nbits ... ignored
+test tests::n5::u64::threadsafe::new ... ignored
+test tests::n5::u64::threadsafe::with_capacity ... ignored
+test tests::n5::u8::private_api::get_raw_bits ... ignored
+test tests::n5::u8::private_api::raw_bit ... ignored
+test tests::n5::u8::private_api::raw_bits ... ignored
+test tests::n5::u8::public_api::align ... ignored
+test tests::n5::u8::public_api::fill ... ignored
+test tests::n5::u8::public_api::get_set ... ignored
+test tests::n5::u8::public_api::new ... ignored
+test tests::n5::u8::public_api::push_pop ... ignored
+test tests::n5::u8::public_api::resize ... ignored
+test tests::n5::u8::public_api::resize_large ... ignored
+test tests::n5::u8::struct_static::bit_loc ... ignored
+test tests::n5::u8::struct_static::block_bits ... ignored
+test tests::n5::u8::struct_static::mask_ok ... ignored
+test tests::n5::u8::struct_static::nbits ... ignored
+test tests::n5::u8::threadsafe::new ... ignored
+test tests::n5::u8::threadsafe::with_capacity ... ignored
+test tests::n6::u16::private_api::get_raw_bits ... ignored
+test tests::n6::u16::private_api::raw_bit ... ignored
+test tests::n6::u16::private_api::raw_bits ... ignored
+test tests::n6::u16::public_api::align ... ignored
+test tests::n6::u16::public_api::fill ... ignored
+test tests::n6::u16::public_api::get_set ... ignored
+test tests::n6::u16::public_api::new ... ignored
+test tests::n6::u16::public_api::push_pop ... ignored
+test tests::n6::u16::public_api::resize ... ignored
+test tests::n6::u16::public_api::resize_large ... ignored
+test tests::n6::u16::struct_static::bit_loc ... ignored
+test tests::n6::u16::struct_static::block_bits ... ignored
+test tests::n6::u16::struct_static::mask_ok ... ignored
+test tests::n6::u16::struct_static::nbits ... ignored
+test tests::n6::u16::threadsafe::new ... ignored
+test tests::n6::u16::threadsafe::with_capacity ... ignored
+test tests::n6::u32::private_api::get_raw_bits ... ignored
+test tests::n6::u32::private_api::raw_bit ... ignored
+test tests::n6::u32::private_api::raw_bits ... ignored
+test tests::n6::u32::public_api::align ... ignored
+test tests::n6::u32::public_api::fill ... ignored
+test tests::n6::u32::public_api::get_set ... ignored
+test tests::n6::u32::public_api::new ... ignored
+test tests::n6::u32::public_api::push_pop ... ignored
+test tests::n6::u32::public_api::resize ... ignored
+test tests::n6::u32::public_api::resize_large ... ignored
+test tests::n6::u32::struct_static::bit_loc ... ignored
+test tests::n6::u32::struct_static::block_bits ... ignored
+test tests::n6::u32::struct_static::mask_ok ... ignored
+test tests::n6::u32::struct_static::nbits ... ignored
+test tests::n6::u32::threadsafe::new ... ignored
+test tests::n6::u32::threadsafe::with_capacity ... ignored
+test tests::n6::u64::private_api::get_raw_bits ... ignored
+test tests::n6::u64::private_api::raw_bit ... ignored
+test tests::n6::u64::private_api::raw_bits ... ignored
+test tests::n6::u64::public_api::align ... ignored
+test tests::n6::u64::public_api::fill ... ignored
+test tests::n6::u64::public_api::get_set ... ignored
+test tests::n6::u64::public_api::new ... ignored
+test tests::n6::u64::public_api::push_pop ... ignored
+test tests::n6::u64::public_api::resize ... ignored
+test tests::n6::u64::public_api::resize_large ... ignored
+test tests::n6::u64::struct_static::bit_loc ... ignored
+test tests::n6::u64::struct_static::block_bits ... ignored
+test tests::n6::u64::struct_static::mask_ok ... ignored
+test tests::n6::u64::struct_static::nbits ... ignored
+test tests::n6::u64::threadsafe::new ... ignored
+test tests::n6::u64::threadsafe::with_capacity ... ignored
+test tests::n6::u8::private_api::get_raw_bits ... ignored
+test tests::n6::u8::private_api::raw_bit ... ignored
+test tests::n6::u8::private_api::raw_bits ... ignored
+test tests::n6::u8::public_api::align ... ignored
+test tests::n6::u8::public_api::fill ... ignored
+test tests::n6::u8::public_api::get_set ... ignored
+test tests::n6::u8::public_api::new ... ignored
+test tests::n6::u8::public_api::push_pop ... ignored
+test tests::n6::u8::public_api::resize ... ignored
+test tests::n6::u8::public_api::resize_large ... ignored
+test tests::n6::u8::struct_static::bit_loc ... ignored
+test tests::n6::u8::struct_static::block_bits ... ignored
+test tests::n6::u8::struct_static::mask_ok ... ignored
+test tests::n6::u8::struct_static::nbits ... ignored
+test tests::n6::u8::threadsafe::new ... ignored
+test tests::n6::u8::threadsafe::with_capacity ... ignored
+test tests::n7::u16::private_api::get_raw_bits ... ignored
+test tests::n7::u16::private_api::raw_bit ... ignored
+test tests::n7::u16::private_api::raw_bits ... ignored
+test tests::n7::u16::public_api::align ... ignored
+test tests::n7::u16::public_api::fill ... ignored
+test tests::n7::u16::public_api::get_set ... ignored
+test tests::n7::u16::public_api::new ... ignored
+test tests::n7::u16::public_api::push_pop ... ignored
+test tests::n7::u16::public_api::resize ... ignored
+test tests::n7::u16::public_api::resize_large ... ignored
+test tests::n7::u16::struct_static::bit_loc ... ignored
+test tests::n7::u16::struct_static::block_bits ... ignored
+test tests::n7::u16::struct_static::mask_ok ... ignored
+test tests::n7::u16::struct_static::nbits ... ignored
+test tests::n7::u16::threadsafe::new ... ignored
+test tests::n7::u16::threadsafe::with_capacity ... ignored
+test tests::n7::u32::private_api::get_raw_bits ... ignored
+test tests::n7::u32::private_api::raw_bit ... ignored
+test tests::n7::u32::private_api::raw_bits ... ignored
+test tests::n7::u32::public_api::align ... ignored
+test tests::n7::u32::public_api::fill ... ignored
+test tests::n7::u32::public_api::get_set ... ignored
+test tests::n7::u32::public_api::new ... ignored
+test tests::n7::u32::public_api::push_pop ... ignored
+test tests::n7::u32::public_api::resize ... ignored
+test tests::n7::u32::public_api::resize_large ... ignored
+test tests::n7::u32::struct_static::bit_loc ... ignored
+test tests::n7::u32::struct_static::block_bits ... ignored
+test tests::n7::u32::struct_static::mask_ok ... ignored
+test tests::n7::u32::struct_static::nbits ... ignored
+test tests::n7::u32::threadsafe::new ... ignored
+test tests::n7::u32::threadsafe::with_capacity ... ignored
+test tests::n7::u64::private_api::get_raw_bits ... ignored
+test tests::n7::u64::private_api::raw_bit ... ignored
+test tests::n7::u64::private_api::raw_bits ... ignored
+test tests::n7::u64::public_api::align ... ignored
+test tests::n7::u64::public_api::fill ... ignored
+test tests::n7::u64::public_api::get_set ... ignored
+test tests::n7::u64::public_api::new ... ignored
+test tests::n7::u64::public_api::push_pop ... ignored
+test tests::n7::u64::public_api::resize ... ignored
+test tests::n7::u64::public_api::resize_large ... ignored
+test tests::n7::u64::struct_static::bit_loc ... ignored
+test tests::n7::u64::struct_static::block_bits ... ignored
+test tests::n7::u64::struct_static::mask_ok ... ignored
+test tests::n7::u64::struct_static::nbits ... ignored
+test tests::n7::u64::threadsafe::new ... ignored
+test tests::n7::u64::threadsafe::with_capacity ... ignored
+test tests::n7::u8::private_api::get_raw_bits ... ignored
+test tests::n7::u8::private_api::raw_bit ... ignored
+test tests::n7::u8::private_api::raw_bits ... ignored
+test tests::n7::u8::public_api::align ... ignored
+test tests::n7::u8::public_api::fill ... ignored
+test tests::n7::u8::public_api::get_set ... ignored
+test tests::n7::u8::public_api::new ... ignored
+test tests::n7::u8::public_api::push_pop ... ignored
+test tests::n7::u8::public_api::resize ... ignored
+test tests::n7::u8::public_api::resize_large ... ignored
+test tests::n7::u8::struct_static::bit_loc ... ignored
+test tests::n7::u8::struct_static::block_bits ... ignored
+test tests::n7::u8::struct_static::mask_ok ... ignored
+test tests::n7::u8::struct_static::nbits ... ignored
+test tests::n7::u8::threadsafe::new ... ignored
+test tests::n7::u8::threadsafe::with_capacity ... ignored
+
+test result: ok. 0 passed; 0 failed; 448 ignored; 0 measured
+
