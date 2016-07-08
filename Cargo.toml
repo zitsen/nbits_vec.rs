@@ -12,3 +12,4 @@ version = "0.1.1"
 build = "build.rs"
 
 [dependencies]
+num-traits = "0.1.32"

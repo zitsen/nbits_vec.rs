@@ -1,23 +1,15 @@
 use std::mem;
-use std::cmp::PartialEq;
-use std::ops::{Add, BitAnd, BitOr, Not, Shl, Shr, Sub};
-use std::num::{One, Zero};
 use std::hash::Hash;
 use std::fmt::LowerHex;
+
+use num_traits::{PrimInt, One, Zero};
+
 pub trait Value {
     /// The storage type of `Value`s.
     ///
     /// The `Block` should be one of the primitive integer ie. `u8`, `u16`  `u32`, `u64`.
     /// Recommend that not to use `usize` because it is platform dependent.
-    type Block: Copy + One + Zero + LowerHex +
-        Add<Output=Self::Block> +
-        Sub<Output=Self::Block> +
-        PartialEq + PartialOrd + Hash + Eq + Ord +
-        BitAnd<Output=Self::Block> +
-        BitOr<Output=Self::Block> +
-        Not<Output=Self::Block> +
-        Shr<Self::Block> + Shl<Self::Block> +
-        Shr<usize, Output=Self::Block> + Shl<usize, Output=Self::Block>;
+    type Block: PrimInt + One + Zero + LowerHex + Hash;
 
     /// The value bit width.
     #[inline(always)]

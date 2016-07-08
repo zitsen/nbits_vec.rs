@@ -26,11 +26,12 @@
 //! [license]: https://github.com/zitsen/nbits_vec.rs/blob/master/LICENSE
 
 #![feature(alloc)]
-#![feature(zero_one)]
 
+extern crate num_traits;
 extern crate alloc;
 
 use alloc::raw_vec::RawVec;
+
 use std::cmp;
 use std::fmt::{self, Debug};
 use std::hash::{self, Hash};
@@ -38,8 +39,10 @@ use std::mem;
 use std::ptr;
 use std::slice;
 use std::ops::{BitAnd, BitOr, Not, Shl, Shr};
-use std::num::{One, Zero};
 use std::marker::{PhantomData, Send, Sync};
+
+use num_traits::{Zero, One};
+
 use self::value::*;
 
 pub mod value;
