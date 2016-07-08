@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["consts",""],["value",""]],"struct":[["NbitsVec","Implement vector contains small `N`-bits values using `T::Block` as unit buffer."]],"type":[["N1",""],["N2",""],["N3",""],["N4",""]]});

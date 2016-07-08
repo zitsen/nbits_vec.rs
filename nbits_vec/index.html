@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `nbits_vec` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, nbits_vec">
+
+    <title>nbits_vec - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'nbits_vec', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>nbits_vec</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/nbits_vec/src/lib.rs.html#1-1235' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p><a href="https://travis-ci.org/zitsen/nbits_vec.rs"><img src="https://img.shields.io/travis/zitsen/nbits_vec.rs.svg?style=flat-square" alt="travis-badge"></a> <a href="https://crates.io/crates/nbits_vec"><img src="https://img.shields.io/crates/v/nbits_vec.svg?style=flat-square" alt="release-badge"></a> <a href="https://crates.io/crates/nbits_vec"><img src="https://img.shields.io/crates/d/nbits_vec.svg?style=flat-square" alt="downloads"></a>
+<a href="https://zitsen.github.io/nbits_vec.rs"><img src="https://img.shields.io/badge/API-docs-blue.svg?style=flat-square" alt="docs-badge"></a> <a href="https://github.com/zitsen/nbits_vec.rs/blob/master/LICENSE"><img src="https://img.shields.io/crates/l/nbits_vec.svg?style=flat-square" alt="license-badge"></a></p>
+
+<p>A crate aims to resolve small bits values storage and operations problem.</p>
+
+<p>Small bits values will be stored in a vector of <code>T::Block</code> - which is a <code>PrimInt</code> in
+memory. Here, we only consider the case that one <code>T::Block</code> will store some of the
+small bits values, such as 1, 2, 3, 4, 5 bits stored in <code>u8</code>, <code>u16</code>, <code>u32</code>, <code>u64</code>.</p>
+
+<p><strong>WARN</strong>: In this crate, I(<a href="http://github.com/zitsen">@zitsen</a>) decided to use
+<code>RawVec</code> from unstable <code>alloc</code> crate as vector background,
+which means the API would only be avaliable in <code>nightly</code> version of Rust and that
+the API might be changed in some time the <code>alloc</code> API changed.
+So a <code>stable</code> version may never give out.</p>
+
+<p>See usage in <a href="struct.NbitsVec.html">struct documentation</a>.</p>
+</div><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='consts/index.html'
+                                  title='nbits_vec::consts'>consts</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='value/index.html'
+                                  title='nbits_vec::value'>value</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='struct' href='struct.NbitsVec.html'
+                                  title='nbits_vec::NbitsVec'>NbitsVec</a></td>
+                           <td class='docblock short'>
+                                <p>Implement vector contains small <code>N</code>-bits values using <code>T::Block</code> as unit
+buffer.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.N1.html'
+                                  title='nbits_vec::N1'>N1</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.N2.html'
+                                  title='nbits_vec::N2'>N2</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.N3.html'
+                                  title='nbits_vec::N3'>N3</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='type' href='type.N4.html'
+                                  title='nbits_vec::N4'>N4</a></td>
+                           <td class='docblock short'>
+                                
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "nbits_vec";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

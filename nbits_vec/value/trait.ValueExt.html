@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `ValueExt` trait in crate `nbits_vec`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, ValueExt">
+
+    <title>nbits_vec::value::ValueExt - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>nbits_vec</a>::<wbr><a href='index.html'>value</a></p><script>window.sidebarCurrent = {name: 'ValueExt', ty: 'trait', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content trait">
+<h1 class='fqn'><span class='in-band'>Trait <a href='../index.html'>nbits_vec</a>::<wbr><a href='index.html'>value</a>::<wbr><a class='trait' href=''>ValueExt</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-31' class='srclink' href='../../src/nbits_vec/src/value.rs.html#58-102' title='goto source code'>[src]</a></span></h1>
+<pre class='rust trait'>pub trait ValueExt: <a class='trait' href='../../nbits_vec/value/trait.Value.html' title='nbits_vec::value::Value'>Value</a> {
+    fn <a href='#method.raw_cap_from' class='fnname'>raw_cap_from</a>(cap: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a> { ... }
+    fn <a href='#method.cap_from' class='fnname'>cap_from</a>(raw_cap: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a> { ... }
+    fn <a href='#method.loc' class='fnname'>loc</a>(index: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a> { ... }
+    fn <a href='#method.bit_loc' class='fnname'>bit_loc</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a> { ... }
+    fn <a href='#method.bit_offset' class='fnname'>bit_offset</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a> { ... }
+    fn <a href='#method.bit_index' class='fnname'>bit_index</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a> { ... }
+}</pre>
+            <h2 id='provided-methods'>Provided Methods</h2>
+            <div class='methods'>
+        <h3 id='method.raw_cap_from' class='method stab '><code>fn <a href='#method.raw_cap_from' class='fnname'>raw_cap_from</a>(cap: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h3><div class='docblock'><p>Converts capacity to storage size</p>
+</div><h3 id='method.cap_from' class='method stab '><code>fn <a href='#method.cap_from' class='fnname'>cap_from</a>(raw_cap: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h3><div class='docblock'><p>Converts the storage size to capacity.</p>
+</div><h3 id='method.loc' class='method stab '><code>fn <a href='#method.loc' class='fnname'>loc</a>(index: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></h3><div class='docblock'><p>Converts the vector index to buf <code>(index, offset)</code> tuple.</p>
+</div><h3 id='method.bit_loc' class='method stab '><code>fn <a href='#method.bit_loc' class='fnname'>bit_loc</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></h3><div class='docblock'><p>Converts bit index to buf <code>BitLoc</code>.</p>
+</div><h3 id='method.bit_offset' class='method stab '><code>fn <a href='#method.bit_offset' class='fnname'>bit_offset</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h3><div class='docblock'><p>Returns block offset of bit position <code>bit</code>.</p>
+</div><h3 id='method.bit_index' class='method stab '><code>fn <a href='#method.bit_index' class='fnname'>bit_index</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h3><div class='docblock'><p>Returns block index of bit position <code>bit</code>.</p>
+</div></div>
+        <h2 id='implementors'>Implementors</h2>
+        <ul class='item-list' id='implementors-list'>
+    <li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N1B8.html' title='nbits_vec::consts::N1B8'>N1B8</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N1B16.html' title='nbits_vec::consts::N1B16'>N1B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N1B32.html' title='nbits_vec::consts::N1B32'>N1B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N1B64.html' title='nbits_vec::consts::N1B64'>N1B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N2B8.html' title='nbits_vec::consts::N2B8'>N2B8</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N2B16.html' title='nbits_vec::consts::N2B16'>N2B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N2B32.html' title='nbits_vec::consts::N2B32'>N2B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N2B64.html' title='nbits_vec::consts::N2B64'>N2B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N3B8.html' title='nbits_vec::consts::N3B8'>N3B8</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N3B16.html' title='nbits_vec::consts::N3B16'>N3B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N3B32.html' title='nbits_vec::consts::N3B32'>N3B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N3B64.html' title='nbits_vec::consts::N3B64'>N3B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N4B8.html' title='nbits_vec::consts::N4B8'>N4B8</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N4B16.html' title='nbits_vec::consts::N4B16'>N4B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N4B32.html' title='nbits_vec::consts::N4B32'>N4B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N4B64.html' title='nbits_vec::consts::N4B64'>N4B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N5B8.html' title='nbits_vec::consts::N5B8'>N5B8</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N5B16.html' title='nbits_vec::consts::N5B16'>N5B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N5B32.html' title='nbits_vec::consts::N5B32'>N5B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N5B64.html' title='nbits_vec::consts::N5B64'>N5B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N6B8.html' title='nbits_vec::consts::N6B8'>N6B8</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N6B16.html' title='nbits_vec::consts::N6B16'>N6B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N6B32.html' title='nbits_vec::consts::N6B32'>N6B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N6B64.html' title='nbits_vec::consts::N6B64'>N6B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N7B8.html' title='nbits_vec::consts::N7B8'>N7B8</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N7B16.html' title='nbits_vec::consts::N7B16'>N7B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N7B32.html' title='nbits_vec::consts::N7B32'>N7B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N7B64.html' title='nbits_vec::consts::N7B64'>N7B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N9B16.html' title='nbits_vec::consts::N9B16'>N9B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N9B32.html' title='nbits_vec::consts::N9B32'>N9B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N9B64.html' title='nbits_vec::consts::N9B64'>N9B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N10B16.html' title='nbits_vec::consts::N10B16'>N10B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N10B32.html' title='nbits_vec::consts::N10B32'>N10B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N10B64.html' title='nbits_vec::consts::N10B64'>N10B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N11B16.html' title='nbits_vec::consts::N11B16'>N11B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N11B32.html' title='nbits_vec::consts::N11B32'>N11B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N11B64.html' title='nbits_vec::consts::N11B64'>N11B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N12B16.html' title='nbits_vec::consts::N12B16'>N12B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N12B32.html' title='nbits_vec::consts::N12B32'>N12B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N12B64.html' title='nbits_vec::consts::N12B64'>N12B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N13B16.html' title='nbits_vec::consts::N13B16'>N13B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N13B32.html' title='nbits_vec::consts::N13B32'>N13B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N13B64.html' title='nbits_vec::consts::N13B64'>N13B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N14B16.html' title='nbits_vec::consts::N14B16'>N14B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N14B32.html' title='nbits_vec::consts::N14B32'>N14B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N14B64.html' title='nbits_vec::consts::N14B64'>N14B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N15B16.html' title='nbits_vec::consts::N15B16'>N15B16</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N15B32.html' title='nbits_vec::consts::N15B32'>N15B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N15B64.html' title='nbits_vec::consts::N15B64'>N15B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N17B32.html' title='nbits_vec::consts::N17B32'>N17B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N17B64.html' title='nbits_vec::consts::N17B64'>N17B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N18B32.html' title='nbits_vec::consts::N18B32'>N18B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N18B64.html' title='nbits_vec::consts::N18B64'>N18B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N19B32.html' title='nbits_vec::consts::N19B32'>N19B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N19B64.html' title='nbits_vec::consts::N19B64'>N19B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N20B32.html' title='nbits_vec::consts::N20B32'>N20B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N20B64.html' title='nbits_vec::consts::N20B64'>N20B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N21B32.html' title='nbits_vec::consts::N21B32'>N21B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N21B64.html' title='nbits_vec::consts::N21B64'>N21B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N22B32.html' title='nbits_vec::consts::N22B32'>N22B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N22B64.html' title='nbits_vec::consts::N22B64'>N22B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N23B32.html' title='nbits_vec::consts::N23B32'>N23B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N23B64.html' title='nbits_vec::consts::N23B64'>N23B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N24B32.html' title='nbits_vec::consts::N24B32'>N24B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N24B64.html' title='nbits_vec::consts::N24B64'>N24B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N25B32.html' title='nbits_vec::consts::N25B32'>N25B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N25B64.html' title='nbits_vec::consts::N25B64'>N25B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N26B32.html' title='nbits_vec::consts::N26B32'>N26B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N26B64.html' title='nbits_vec::consts::N26B64'>N26B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N27B32.html' title='nbits_vec::consts::N27B32'>N27B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N27B64.html' title='nbits_vec::consts::N27B64'>N27B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N28B32.html' title='nbits_vec::consts::N28B32'>N28B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N28B64.html' title='nbits_vec::consts::N28B64'>N28B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N29B32.html' title='nbits_vec::consts::N29B32'>N29B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N29B64.html' title='nbits_vec::consts::N29B64'>N29B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N30B32.html' title='nbits_vec::consts::N30B32'>N30B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N30B64.html' title='nbits_vec::consts::N30B64'>N30B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N31B32.html' title='nbits_vec::consts::N31B32'>N31B32</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N31B64.html' title='nbits_vec::consts::N31B64'>N31B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N33B64.html' title='nbits_vec::consts::N33B64'>N33B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N34B64.html' title='nbits_vec::consts::N34B64'>N34B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N35B64.html' title='nbits_vec::consts::N35B64'>N35B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N36B64.html' title='nbits_vec::consts::N36B64'>N36B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N37B64.html' title='nbits_vec::consts::N37B64'>N37B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N38B64.html' title='nbits_vec::consts::N38B64'>N38B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N39B64.html' title='nbits_vec::consts::N39B64'>N39B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N40B64.html' title='nbits_vec::consts::N40B64'>N40B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N41B64.html' title='nbits_vec::consts::N41B64'>N41B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N42B64.html' title='nbits_vec::consts::N42B64'>N42B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N43B64.html' title='nbits_vec::consts::N43B64'>N43B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N44B64.html' title='nbits_vec::consts::N44B64'>N44B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N45B64.html' title='nbits_vec::consts::N45B64'>N45B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N46B64.html' title='nbits_vec::consts::N46B64'>N46B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N47B64.html' title='nbits_vec::consts::N47B64'>N47B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N48B64.html' title='nbits_vec::consts::N48B64'>N48B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N49B64.html' title='nbits_vec::consts::N49B64'>N49B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N50B64.html' title='nbits_vec::consts::N50B64'>N50B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N51B64.html' title='nbits_vec::consts::N51B64'>N51B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N52B64.html' title='nbits_vec::consts::N52B64'>N52B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N53B64.html' title='nbits_vec::consts::N53B64'>N53B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N54B64.html' title='nbits_vec::consts::N54B64'>N54B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N55B64.html' title='nbits_vec::consts::N55B64'>N55B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N56B64.html' title='nbits_vec::consts::N56B64'>N56B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N57B64.html' title='nbits_vec::consts::N57B64'>N57B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N58B64.html' title='nbits_vec::consts::N58B64'>N58B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N59B64.html' title='nbits_vec::consts::N59B64'>N59B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N60B64.html' title='nbits_vec::consts::N60B64'>N60B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N61B64.html' title='nbits_vec::consts::N61B64'>N61B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N62B64.html' title='nbits_vec::consts::N62B64'>N62B64</a></code></li>
+<li><code>impl ValueExt for <a class='enum' href='../../nbits_vec/consts/enum.N63B64.html' title='nbits_vec::consts::N63B64'>N63B64</a></code></li>
+</ul><script type="text/javascript" async
+                         src="../../implementors/nbits_vec/value/trait.ValueExt.js">
+                 </script></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "nbits_vec";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

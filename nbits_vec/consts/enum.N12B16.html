@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `N12B16` enum in crate `nbits_vec`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, N12B16">
+
+    <title>nbits_vec::consts::N12B16 - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>nbits_vec</a>::<wbr><a href='index.html'>consts</a></p><script>window.sidebarCurrent = {name: 'N12B16', ty: 'enum', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content enum">
+<h1 class='fqn'><span class='in-band'>Enum <a href='../index.html'>nbits_vec</a>::<wbr><a href='index.html'>consts</a>::<wbr><a class='enum' href=''>N12B16</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-254' class='srclink' href='../../src/nbits_vec/home/travis/build/zitsen/nbits_vec.rs/target/debug/build/nbits_vec-cb3a5dd4c5ec54cf/out/consts.rs.html#277' title='goto source code'>[src]</a></span></h1>
+<pre class='rust enum'>pub enum N12B16 {}</pre><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../nbits_vec/value/trait.Value.html' title='nbits_vec::value::Value'>Value</a> for <a class='enum' href='../../nbits_vec/consts/enum.N12B16.html' title='nbits_vec::consts::N12B16'>N12B16</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-255' class='srclink' href='../../src/nbits_vec/home/travis/build/zitsen/nbits_vec.rs/target/debug/build/nbits_vec-cb3a5dd4c5ec54cf/out/consts.rs.html#278-282' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='associatedtype.Block' class='type'><code>type <a href='../../nbits_vec/value/trait.Value.html#associatedtype.Block' class='type'>Block</a> = <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a></code></h4>
+<div class='docblock'><p>The storage type of <code>Value</code>s. <a href="../../nbits_vec/value/trait.Value.html#associatedtype.Block">Read more</a></p>
+</div><h4 id='method.nbits' class='method'><code>fn <a href='../../nbits_vec/value/trait.Value.html#tymethod.nbits' class='fnname'>nbits</a>() -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>The value bit width.</p>
+</div><h4 id='method.one' class='method'><code>fn <a href='../../nbits_vec/value/trait.Value.html#method.one' class='fnname'>one</a>() -&gt; Self::<a class='trait' href='../../nbits_vec/value/trait.Value.html' title='nbits_vec::value::Value'>Block</a></code></h4>
+<div class='docblock'><p>Return 1</p>
+</div><h4 id='method.zero' class='method'><code>fn <a href='../../nbits_vec/value/trait.Value.html#method.zero' class='fnname'>zero</a>() -&gt; Self::<a class='trait' href='../../nbits_vec/value/trait.Value.html' title='nbits_vec::value::Value'>Block</a></code></h4>
+<div class='docblock'><p>Return 0</p>
+</div><h4 id='method.mask' class='method'><code>fn <a href='../../nbits_vec/value/trait.Value.html#method.mask' class='fnname'>mask</a>() -&gt; Self::<a class='trait' href='../../nbits_vec/value/trait.Value.html' title='nbits_vec::value::Value'>Block</a></code></h4>
+<div class='docblock'><p>The value&#39;s bit mask in the <code>Block</code>. <a href="../../nbits_vec/value/trait.Value.html#method.mask">Read more</a></p>
+</div><h4 id='method.block_bits' class='method'><code>fn <a href='../../nbits_vec/value/trait.Value.html#method.block_bits' class='fnname'>block_bits</a>() -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Bit-size of <code>Block</code>.</p>
+</div><h4 id='method.is_aligned' class='method'><code>fn <a href='../../nbits_vec/value/trait.Value.html#method.is_aligned' class='fnname'>is_aligned</a>() -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Value is <code>aligned</code> when <code>block_bits</code> is divisible by <code>nbits</code>.</p>
+</div><h4 id='method.is_packed' class='method'><code>fn <a href='../../nbits_vec/value/trait.Value.html#method.is_packed' class='fnname'>is_packed</a>() -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<div class='docblock'><p>Value is <code>packed</code> when <code>block_bits</code> is equal to <code>nbits</code>.</p>
+</div></div><h3 class='impl'><span class='in-band'><code>impl <a class='trait' href='../../nbits_vec/value/trait.ValueExt.html' title='nbits_vec::value::ValueExt'>ValueExt</a> for <a class='enum' href='../../nbits_vec/consts/enum.N12B16.html' title='nbits_vec::consts::N12B16'>N12B16</a></code></span><span class='out-of-band'><div class='ghost'></div><a id='src-258' class='srclink' href='../../src/nbits_vec/home/travis/build/zitsen/nbits_vec.rs/target/debug/build/nbits_vec-cb3a5dd4c5ec54cf/out/consts.rs.html#283' title='goto source code'>[src]</a></span></h3>
+<div class='impl-items'><h4 id='method.raw_cap_from' class='method'><code>fn <a href='../../nbits_vec/value/trait.ValueExt.html#method.raw_cap_from' class='fnname'>raw_cap_from</a>(cap: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Converts capacity to storage size</p>
+</div><h4 id='method.cap_from' class='method'><code>fn <a href='../../nbits_vec/value/trait.ValueExt.html#method.cap_from' class='fnname'>cap_from</a>(raw_cap: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Converts the storage size to capacity.</p>
+</div><h4 id='method.loc' class='method'><code>fn <a href='../../nbits_vec/value/trait.ValueExt.html#method.loc' class='fnname'>loc</a>(index: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></h4>
+<div class='docblock'><p>Converts the vector index to buf <code>(index, offset)</code> tuple.</p>
+</div><h4 id='method.bit_loc' class='method'><code>fn <a href='../../nbits_vec/value/trait.ValueExt.html#method.bit_loc' class='fnname'>bit_loc</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>, <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a></code></h4>
+<div class='docblock'><p>Converts bit index to buf <code>BitLoc</code>.</p>
+</div><h4 id='method.bit_offset' class='method'><code>fn <a href='../../nbits_vec/value/trait.ValueExt.html#method.bit_offset' class='fnname'>bit_offset</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Returns block offset of bit position <code>bit</code>.</p>
+</div><h4 id='method.bit_index' class='method'><code>fn <a href='../../nbits_vec/value/trait.ValueExt.html#method.bit_index' class='fnname'>bit_index</a>(bit: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Returns block index of bit position <code>bit</code>.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "nbits_vec";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>
