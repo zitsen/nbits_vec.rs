@@ -1,5 +1,5 @@
 #![feature(test)]
-#![feature(step_by)]
+//#![feature(step_by)]
 extern crate nbits_vec;
 extern crate test;
 

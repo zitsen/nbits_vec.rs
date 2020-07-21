@@ -25,7 +25,8 @@
 //! [license-badge]: https://img.shields.io/crates/l/nbits_vec.svg?style=flat-square
 //! [license]: https://github.com/zitsen/nbits_vec.rs/blob/master/LICENSE
 
-#![feature(alloc)]
+#![feature(raw_vec_internals)]
+
 
 extern crate num_traits;
 extern crate alloc;
