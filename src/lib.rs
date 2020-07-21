@@ -26,21 +26,23 @@
 //! [license]: https://github.com/zitsen/nbits_vec.rs/blob/master/LICENSE
 
 #![feature(raw_vec_internals)]
-
+#![feature(new_uninit)]
 
 extern crate num_traits;
 extern crate alloc;
+extern crate core;
 
+use core::mem::ManuallyDrop;
 use alloc::raw_vec::RawVec;
 
-use std::cmp;
-use std::fmt::{self, Debug};
-use std::hash::{self, Hash};
-use std::mem;
-use std::ptr;
-use std::slice;
-use std::ops::{BitAnd, BitOr, Not, Shl, Shr};
-use std::marker::{PhantomData, Send, Sync};
+use core::mem;
+use core::cmp;
+use core::fmt::{self, Debug};
+use core::hash::{self, Hash};
+use core::ptr;
+use core::slice;
+use core::ops::{BitAnd, BitOr, Not, Shl, Shr};
+use core::marker::{PhantomData, Send, Sync};
 
 use num_traits::{Zero, One};
 
@@ -221,7 +223,7 @@ impl<T: ValueExt> NbitsVec<T> {
     /// ```
     #[inline]
     pub fn capacity(&self) -> usize {
-        T::cap_from(self.buf.cap())
+        T::cap_from(self.buf.capacity())
     }
 
     /// Reserves capacity for at least additional more elements to be inserted in the given
@@ -1125,9 +1127,10 @@ impl<T: ValueExt> NbitsVec<T> {
     pub fn into_raw_boxed_slice(mut self) -> Box<[T::Block]> {
         unsafe {
             self.shrink_to_fit();
-            let buf = ptr::read(&self.buf);
-            mem::forget(self);
-            buf.into_box()
+            let me = ManuallyDrop::new(self);
+            let buf = ptr::read(&me.buf);
+            let len = T::raw_cap_from(me.len());
+            buf.into_box(len).assume_init()
         }
     }
 
@@ -1145,7 +1148,7 @@ impl<T: ValueExt> NbitsVec<T> {
     /// The `RawVec` buffer capacity(T::Block).
     #[inline]
     fn raw_cap(&self) -> usize {
-        self.buf.cap()
+        self.buf.capacity()
     }
 }
 
@@ -1165,15 +1168,15 @@ impl<T: ValueExt> Default for NbitsVec<T> {
 
 impl<T: Value> Debug for NbitsVec<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f,
+        write!(f,
                     "NbitsVec<{}> {{ len: {}, buf: RawVec {{ cap: {}, [",
                     T::nbits(),
                     self.len,
-                    self.buf.cap()));
+                    self.buf.capacity())?;
         let ptr = self.buf.ptr();
-        for i in 0..self.buf.cap() {
+        for i in 0..self.buf.capacity() {
             unsafe {
-                try!(write!(f, "{:#x}, ", ptr::read(ptr.offset(i as isize))));
+                write!(f, "{:#x}, ", ptr::read(ptr.offset(i as isize)))?;
             }
         }
         write!(f, "] }}")
